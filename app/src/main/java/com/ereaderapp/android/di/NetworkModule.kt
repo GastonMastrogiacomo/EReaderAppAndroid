@@ -2,9 +2,9 @@ package com.ereaderapp.android.di
 
 import android.content.Context
 import androidx.datastore.preferences.preferencesDataStore
-import com.yourname.ereaderapp.BuildConfig
-import com.yourname.ereaderapp.data.api.ApiService
-import com.yourname.ereaderapp.data.local.TokenManager
+import com.ereaderapp.android.BuildConfig
+import com.ereaderapp.android.data.api.ApiService
+import com.ereaderapp.android.data.local.TokenManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn

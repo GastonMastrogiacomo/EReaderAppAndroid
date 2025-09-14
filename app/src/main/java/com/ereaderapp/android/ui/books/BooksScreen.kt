@@ -2,6 +2,7 @@ package com.ereaderapp.android.ui.books
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -17,6 +18,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 import com.ereaderapp.android.data.models.Book
 import com.ereaderapp.android.ui.components.BookCard
 import com.ereaderapp.android.ui.components.BookListItem
@@ -104,7 +106,7 @@ fun BooksScreen(
                     )
 
                     LaunchedEffect(searchText) {
-                        kotlinx.coroutines.delay(500) // Debounce
+                        delay(500) // Debounce
                         if (searchText != searchQuery) {
                             viewModel.searchBooks(searchText)
                         }
@@ -173,10 +175,11 @@ fun BooksScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
+            val currentError = error
             when {
-                error != null -> {
+                currentError != null -> {
                     ErrorMessage(
-                        message = error,
+                        message = currentError,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),

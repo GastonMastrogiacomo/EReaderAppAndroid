@@ -34,23 +34,30 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
     var confirmPasswordVisible by remember { mutableStateOf(false) }
+    var formError by remember { mutableStateOf<String?>(null) }
 
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val authState by viewModel.authState.collectAsState()
 
-    // Validation
-    val isPasswordValid = password.length >= 8
-    val doPasswordsMatch = password == confirmPassword
-    val isFormValid = name.isNotBlank() &&
-            email.isNotBlank() &&
-            isPasswordValid &&
-            doPasswordsMatch
-
     // Handle authentication success
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
             onRegisterSuccess()
+        }
+    }
+
+    // Clear form error when user starts typing
+    LaunchedEffect(name, email, password, confirmPassword) {
+        if (formError != null) {
+            formError = null
+        }
+    }
+
+    // Clear API error when user starts typing
+    LaunchedEffect(name, email, password, confirmPassword) {
+        if (error != null) {
+            viewModel.clearError()
         }
     }
 
@@ -94,7 +101,8 @@ fun RegisterScreen(
             },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            enabled = !isLoading
+            enabled = !isLoading,
+            isError = formError != null || error != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -115,7 +123,8 @@ fun RegisterScreen(
             ),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            enabled = !isLoading
+            enabled = !isLoading,
+            isError = formError != null || error != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -146,10 +155,7 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             enabled = !isLoading,
-            isError = password.isNotEmpty() && !isPasswordValid,
-            supportingText = if (password.isNotEmpty() && !isPasswordValid) {
-                { Text("Password must be at least 8 characters") }
-            } else null
+            isError = formError != null || error != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -180,18 +186,16 @@ fun RegisterScreen(
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
             enabled = !isLoading,
-            isError = confirmPassword.isNotEmpty() && !doPasswordsMatch,
-            supportingText = if (confirmPassword.isNotEmpty() && !doPasswordsMatch) {
-                { Text("Passwords do not match") }
-            } else null
+            isError = formError != null || error != null
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Error Message
-        error?.let {
+        // Error Messages
+        val displayError = formError ?: error
+        if (displayError != null) {
             ErrorMessage(
-                message = it,
+                message = displayError,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -200,11 +204,26 @@ fun RegisterScreen(
         // Register Button
         Button(
             onClick = {
+                // Clear any existing errors
+                formError = null
                 viewModel.clearError()
-                viewModel.register(name.trim(), email.trim(), password)
+
+                // Validate form
+                val validationError = viewModel.validateRegisterForm(
+                    name.trim(),
+                    email.trim(),
+                    password,
+                    confirmPassword
+                )
+                if (validationError != null) {
+                    formError = validationError
+                } else {
+                    // Proceed with registration
+                    viewModel.register(name.trim(), email.trim(), password)
+                }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading && isFormValid
+            enabled = !isLoading
         ) {
             if (isLoading) {
                 CircularProgressIndicator(

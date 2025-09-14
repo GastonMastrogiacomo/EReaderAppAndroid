@@ -79,6 +79,28 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    // Add method to validate form inputs
+    fun validateLoginForm(email: String, password: String): String? {
+        return when {
+            email.isBlank() -> "Email is required"
+            password.isBlank() -> "Password is required"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email format"
+            else -> null
+        }
+    }
+
+    fun validateRegisterForm(name: String, email: String, password: String, confirmPassword: String): String? {
+        return when {
+            name.isBlank() -> "Name is required"
+            email.isBlank() -> "Email is required"
+            password.isBlank() -> "Password is required"
+            confirmPassword.isBlank() -> "Please confirm your password"
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> "Invalid email format"
+            password.length < 8 -> "Password must be at least 8 characters"
+            password != confirmPassword -> "Passwords do not match"
+            else -> null
+        }
+    }
 }
 
 sealed class AuthState {

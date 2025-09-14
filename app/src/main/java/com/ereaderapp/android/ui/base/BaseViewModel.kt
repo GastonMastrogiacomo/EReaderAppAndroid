@@ -23,7 +23,8 @@ abstract class BaseViewModel : ViewModel() {
         _error.value = error
     }
 
-    protected fun clearError() {
+    // Make clearError public so it can be called from Composables
+    fun clearError() {
         _error.value = null
     }
 

@@ -31,6 +31,7 @@ fun LoginScreen(
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+    var formError by remember { mutableStateOf<String?>(null) }
 
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
@@ -40,6 +41,20 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         if (authState is AuthState.Authenticated) {
             onLoginSuccess()
+        }
+    }
+
+    // Clear form error when user starts typing
+    LaunchedEffect(email, password) {
+        if (formError != null) {
+            formError = null
+        }
+    }
+
+    // Clear API error when user starts typing
+    LaunchedEffect(email, password) {
+        if (error != null) {
+            viewModel.clearError()
         }
     }
 
@@ -86,7 +101,8 @@ fun LoginScreen(
             ),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            enabled = !isLoading
+            enabled = !isLoading,
+            isError = formError != null || error != null
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -116,15 +132,17 @@ fun LoginScreen(
             ),
             modifier = Modifier.fillMaxWidth(),
             singleLine = true,
-            enabled = !isLoading
+            enabled = !isLoading,
+            isError = formError != null || error != null
         )
 
         Spacer(modifier = Modifier.height(24.dp))
 
-        // Error Message
-        error?.let {
+        // Error Messages
+        val displayError = formError ?: error
+        if (displayError != null) {
             ErrorMessage(
-                message = it,
+                message = displayError,
                 modifier = Modifier.fillMaxWidth()
             )
             Spacer(modifier = Modifier.height(16.dp))
@@ -133,11 +151,21 @@ fun LoginScreen(
         // Login Button
         Button(
             onClick = {
+                // Clear any existing errors
+                formError = null
                 viewModel.clearError()
-                viewModel.login(email.trim(), password)
+
+                // Validate form
+                val validationError = viewModel.validateLoginForm(email.trim(), password)
+                if (validationError != null) {
+                    formError = validationError
+                } else {
+                    // Proceed with login
+                    viewModel.login(email.trim(), password)
+                }
             },
             modifier = Modifier.fillMaxWidth(),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank()
+            enabled = !isLoading
         ) {
             if (isLoading) {
                 CircularProgressIndicator(

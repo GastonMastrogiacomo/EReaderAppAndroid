@@ -45,7 +45,7 @@ fun LibraryDetailsScreen(
 
     // Handle success messages
     LaunchedEffect(actionSuccess) {
-        if (actionSuccess != null) {
+        actionSuccess?.let {
             // Show success message
             viewModel.clearActionSuccess()
         }
@@ -93,10 +93,11 @@ fun LibraryDetailsScreen(
         Box(
             modifier = Modifier.fillMaxSize()
         ) {
+            val currentError = error
             when {
-                error != null -> {
+                currentError != null -> {
                     ErrorMessage(
-                        message = error,
+                        message = currentError,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(16.dp),

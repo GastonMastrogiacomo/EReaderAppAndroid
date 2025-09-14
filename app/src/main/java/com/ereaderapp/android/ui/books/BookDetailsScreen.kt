@@ -58,7 +58,7 @@ fun BookDetailsScreen(
 
     // Handle success messages
     LaunchedEffect(actionSuccess) {
-        if (actionSuccess != null) {
+        actionSuccess?.let {
             // Show success message (you can use a SnackBar here)
             librariesViewModel.clearActionSuccess()
         }
@@ -80,10 +80,12 @@ fun BookDetailsScreen(
             }
         )
 
+        // Content
+        val currentError = error
         when {
-            error != null -> {
+            currentError != null -> {
                 ErrorMessage(
-                    message = error,
+                    message = currentError,
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(16.dp),
@@ -116,15 +118,19 @@ fun BookDetailsScreen(
                         BookInfo(book = bookDetails)
                     }
 
-                    if (!bookDetails.description.isNullOrEmpty()) {
-                        item {
-                            BookDescription(description = bookDetails.description)
+                    bookDetails.description?.let { description ->
+                        if (description.isNotEmpty()) {
+                            item {
+                                BookDescription(description = description)
+                            }
                         }
                     }
 
-                    if (!bookDetails.authorBio.isNullOrEmpty()) {
-                        item {
-                            AuthorBio(authorBio = bookDetails.authorBio)
+                    bookDetails.authorBio?.let { authorBio ->
+                        if (authorBio.isNotEmpty()) {
+                            item {
+                                AuthorBio(authorBio = authorBio)
+                            }
                         }
                     }
                 }
@@ -183,10 +189,11 @@ private fun BookHeader(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center
             ) {
-                if (!book.imageLink.isNullOrEmpty()) {
+                val imageLink = book.imageLink
+                if (!imageLink.isNullOrEmpty()) {
                     AsyncImage(
                         model = ImageRequest.Builder(LocalContext.current)
-                            .data(book.imageLink)
+                            .data(imageLink)
                             .crossfade(true)
                             .build(),
                         contentDescription = "Book cover",
@@ -280,16 +287,22 @@ private fun BookInfo(book: Book) {
                 )
             )
 
-            if (!book.releaseDate.isNullOrEmpty()) {
-                InfoRow(label = "Release Date", value = book.releaseDate)
+            book.releaseDate?.let { releaseDate ->
+                if (releaseDate.isNotEmpty()) {
+                    InfoRow(label = "Release Date", value = releaseDate)
+                }
             }
 
-            if (book.pageCount != null && book.pageCount > 0) {
-                InfoRow(label = "Pages", value = "${book.pageCount}")
+            book.pageCount?.let { pageCount ->
+                if (pageCount > 0) {
+                    InfoRow(label = "Pages", value = pageCount.toString())
+                }
             }
 
-            if (book.score != null && book.score > 0) {
-                InfoRow(label = "Score", value = "${"%.1f".format(book.score)}/10")
+            book.score?.let { score ->
+                if (score > 0) {
+                    InfoRow(label = "Score", value = "${"%.1f".format(score)}/10")
+                }
             }
         }
     }

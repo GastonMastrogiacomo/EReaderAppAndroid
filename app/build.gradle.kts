@@ -1,17 +1,17 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
-    id("kotlin-kapt")
+    id("com.google.devtools.ksp") version "1.9.20-1.0.14"
     id("dagger.hilt.android.plugin")
     id("kotlin-parcelize")
 }
 
 android {
-    namespace = "com.yourname.ereaderapp"
+    namespace = "com.ereaderapp.android"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.yourname.ereaderapp"
+        applicationId = "com.ereaderapp.android"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -22,7 +22,6 @@ android {
             useSupportLibrary = true
         }
 
-        // Base URL for your API
         buildConfigField("String", "BASE_URL", "\"https://your-api-domain.com/api/\"")
     }
 
@@ -35,7 +34,7 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:7166/api/\"") // For Android emulator
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:7166/api/\"")
         }
     }
 
@@ -93,16 +92,13 @@ dependencies {
     // Image loading
     implementation("io.coil-kt:coil-compose:2.5.0")
 
-    // Dependency Injection
+    // Dependency Injection with KSP
     implementation("com.google.dagger:hilt-android:2.48")
-    kapt("com.google.dagger:hilt-compiler:2.48")
+    ksp("com.google.dagger:hilt-compiler:2.48")
     implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
     // DataStore for local storage
     implementation("androidx.datastore:datastore-preferences:1.0.0")
-
-    // PDF Viewer
-    implementation("com.github.barteksc:android-pdf-viewer:3.2.0-beta.1")
 
     // Material Icons Extended
     implementation("androidx.compose.material:material-icons-extended")
