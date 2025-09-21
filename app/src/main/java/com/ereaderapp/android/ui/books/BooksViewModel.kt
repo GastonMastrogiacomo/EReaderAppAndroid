@@ -1,7 +1,6 @@
 package com.ereaderapp.android.ui.books
 
 import androidx.lifecycle.viewModelScope
-import com.ereaderapp.android.data.api.Category
 import com.ereaderapp.android.data.models.Book
 import com.ereaderapp.android.data.repository.Repository
 import com.ereaderapp.android.ui.base.BaseViewModel

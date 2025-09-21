@@ -1,9 +1,9 @@
 package com.ereaderapp.android.ui.auth
 
+import android.content.Intent
 import androidx.lifecycle.viewModelScope
 import com.ereaderapp.android.data.models.User
 import com.ereaderapp.android.data.repository.Repository
-import com.ereaderapp.android.services.GoogleSignInService
 import com.ereaderapp.android.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,8 +14,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: Repository,
-    private val googleSignInService: GoogleSignInService
+    private val repository: Repository
 ) : BaseViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
@@ -53,13 +52,33 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun register(name: String, email: String, password: String) {
+        executeWithLoading {
+            val result = repository.register(name, email, password)
+            result.fold(
+                onSuccess = { registerResponse ->
+                    if (registerResponse.success) {
+                        _authState.value = AuthState.Authenticated
+                    } else {
+                        setError(registerResponse.message ?: "Registration failed")
+                        _authState.value = AuthState.Unauthenticated
+                    }
+                },
+                onFailure = { exception ->
+                    setError(exception.message ?: "Registration failed")
+                    _authState.value = AuthState.Unauthenticated
+                }
+            )
+        }
+    }
+
     fun signInWithGoogle() {
         executeWithLoading {
-            val signInResult = googleSignInService.signIn()
+            val signInResult = repository.signInWithGoogle()
             signInResult.fold(
                 onSuccess = { idToken ->
                     // Send the ID token to your backend
-                    val result = repository.loginWithGoogle(idToken)
+                    val result = repository.googleLogin(idToken)
                     result.fold(
                         onSuccess = { loginResponse ->
                             if (loginResponse.success) {
@@ -83,20 +102,24 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    fun register(name: String, email: String, password: String) {
+    fun getGoogleSignInIntent(): Intent {
+        return repository.getGoogleSignInIntent()
+    }
+
+    fun handleGoogleSignInResult(data: Intent?) {
         executeWithLoading {
-            val result = repository.register(name, email, password)
+            val result = repository.handleGoogleSignInResult(data)
             result.fold(
-                onSuccess = { registerResponse ->
-                    if (registerResponse.success) {
+                onSuccess = { loginResponse ->
+                    if (loginResponse.success) {
                         _authState.value = AuthState.Authenticated
                     } else {
-                        setError(registerResponse.message ?: "Registration failed")
+                        setError(loginResponse.message ?: "Google sign-in failed")
                         _authState.value = AuthState.Unauthenticated
                     }
                 },
                 onFailure = { exception ->
-                    setError(exception.message ?: "Registration failed")
+                    setError(exception.message ?: "Google sign-in failed")
                     _authState.value = AuthState.Unauthenticated
                 }
             )
@@ -111,7 +134,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    // Validation methods remain the same
+    // Validation methods
     fun validateLoginForm(email: String, password: String): String? {
         return when {
             email.isBlank() -> "Email is required"

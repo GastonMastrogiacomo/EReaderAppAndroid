@@ -2,14 +2,17 @@ package com.ereaderapp.android.ui.auth
 
 import android.content.Context
 import android.content.Intent
-import androidx.activity.result.ActivityResultLauncher
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.ereaderapp.android.BuildConfig
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.coroutines.resume
 
 @Singleton
 class GoogleAuthService @Inject constructor(
@@ -19,7 +22,7 @@ class GoogleAuthService @Inject constructor(
 
     init {
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-            .requestIdToken("40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com") // Replace with your web client ID
+            .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
             .requestEmail()
             .build()
 
@@ -46,7 +49,19 @@ class GoogleAuthService @Inject constructor(
         }
     }
 
-    fun signOut() {
-        googleSignInClient.signOut()
+    suspend fun signIn(): Result<String> {
+        return suspendCancellableCoroutine { continuation ->
+            // This method would be used with the newer Credential Manager API
+            // For now, we'll use the intent-based approach
+            continuation.resume(Result.failure(Exception("Use getSignInIntent() instead")))
+        }
+    }
+
+    suspend fun signOut() {
+        try {
+            googleSignInClient.signOut().await()
+        } catch (e: Exception) {
+            // Handle silently
+        }
     }
 }

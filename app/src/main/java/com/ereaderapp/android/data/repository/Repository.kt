@@ -1,5 +1,6 @@
 package com.ereaderapp.android.data.repository
 
+import android.content.Intent
 import com.ereaderapp.android.data.api.*
 import com.ereaderapp.android.data.local.TokenManager
 import com.ereaderapp.android.data.models.*
@@ -51,12 +52,17 @@ class Repository @Inject constructor(
     }
 
     suspend fun logout() {
+        try {
+            googleAuthService.signOut()
+        } catch (e: Exception) {
+            // Handle silently
+        }
         tokenManager.clearAuthData()
     }
 
     suspend fun googleLogin(idToken: String): Result<LoginResponse> {
         return try {
-            val response = apiService.googleLogin(GoogleLoginRequest(idToken))
+            val response = apiService.loginWithGoogle(GoogleLoginRequest(idToken))
             if (response.isSuccessful && response.body() != null) {
                 val loginResponse = response.body()!!
                 if (loginResponse.success && loginResponse.token != null && loginResponse.user != null) {
@@ -71,9 +77,15 @@ class Repository @Inject constructor(
         }
     }
 
-    fun getGoogleSignInIntent() = googleAuthService.getSignInIntent()
+    suspend fun signInWithGoogle(): Result<String> {
+        return googleAuthService.signIn()
+    }
 
-    suspend fun handleGoogleSignInResult(data: android.content.Intent?): Result<LoginResponse> {
+    fun getGoogleSignInIntent(): Intent {
+        return googleAuthService.getSignInIntent()
+    }
+
+    suspend fun handleGoogleSignInResult(data: Intent?): Result<LoginResponse> {
         val tokenResult = googleAuthService.handleSignInResult(data)
         return tokenResult.fold(
             onSuccess = { idToken -> googleLogin(idToken) },
@@ -113,7 +125,23 @@ class Repository @Inject constructor(
         return try {
             val response = apiService.getBook(id)
             if (response.isSuccessful && response.body()?.success == true && response.body()?.data != null) {
-                Result.success(response.body()!!.data!!)
+                // Convert BookDetails to Book
+                val bookDetails = response.body()!!.data!!
+                val book = Book(
+                    id = bookDetails.id,
+                    title = bookDetails.title,
+                    author = bookDetails.author,
+                    description = bookDetails.description,
+                    imageLink = bookDetails.imageLink,
+                    releaseDate = bookDetails.releaseDate,
+                    pageCount = bookDetails.pageCount,
+                    score = bookDetails.score,
+                    authorBio = bookDetails.authorBio,
+                    pdfPath = bookDetails.pdfPath,
+                    averageRating = bookDetails.averageRating,
+                    reviewCount = bookDetails.reviewCount
+                )
+                Result.success(book)
             } else {
                 Result.failure(Exception("Failed to fetch book: ${response.message()}"))
             }
@@ -206,7 +234,14 @@ class Repository @Inject constructor(
         return try {
             val response = apiService.getLibrary(id)
             if (response.isSuccessful && response.body()?.success == true && response.body()?.data != null) {
-                Result.success(response.body()!!.data!!)
+                val libraryDetails = response.body()!!.data!!
+                val library = Library(
+                    id = libraryDetails.id,
+                    name = libraryDetails.name,
+                    bookCount = libraryDetails.bookCount,
+                    books = libraryDetails.books
+                )
+                Result.success(library)
             } else {
                 Result.failure(Exception("Failed to fetch library: ${response.message()}"))
             }

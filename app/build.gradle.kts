@@ -39,7 +39,8 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:7166/\"")        }
+            buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
+        }
     }
 
     compileOptions {
@@ -113,6 +114,12 @@ dependencies {
     // Date and Time
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
 
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
+    // PDF Rendering
+    implementation("androidx.core:core-ktx:1.12.0")
+
     // Testing
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.1.5")
@@ -121,8 +128,4 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
-
-    // Google Sign-In
-    implementation("com.google.android.gms:play-services-auth:20.7.0")
-
 }
