@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import com.ereaderapp.android.data.models.Book
 import com.ereaderapp.android.data.repository.Repository
 import com.ereaderapp.android.ui.base.BaseViewModel
+import com.ereaderapp.android.data.api.Category
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

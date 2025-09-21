@@ -4,7 +4,7 @@ plugins {
     id("com.google.devtools.ksp") version "1.9.20-1.0.14"
     id("dagger.hilt.android.plugin")
     id("kotlin-parcelize")
-    id("com.google.gms.google-services")
+    // REMOVED: id("com.google.gms.google-services") - Not needed for Supabase
 }
 
 android {
@@ -23,10 +23,10 @@ android {
             useSupportLibrary = true
         }
 
-        // Add your actual backend URL here
+        // Your backend URL (should handle Supabase auth)
         buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
 
-        // Add your Google Web Client ID (from your web app's Google Console)
+        // Google OAuth Web Client ID (from Google Cloud Console)
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
     }
 
@@ -110,11 +110,12 @@ dependencies {
 
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
     // Date and Time
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
 
-    // Google Sign-In
+    // Google Sign-In (for OAuth with Supabase)
     implementation("com.google.android.gms:play-services-auth:20.7.0")
 
     // PDF Rendering
