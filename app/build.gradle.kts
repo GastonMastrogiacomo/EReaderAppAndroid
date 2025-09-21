@@ -4,6 +4,7 @@ plugins {
     id("com.google.devtools.ksp") version "1.9.20-1.0.14"
     id("dagger.hilt.android.plugin")
     id("kotlin-parcelize")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -22,7 +23,11 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "BASE_URL", "\"https://your-api-domain.com/api/\"")
+        // Add your actual backend URL here
+        buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
+
+        // Add your Google Web Client ID (from your web app's Google Console)
+        buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
     }
 
     buildTypes {
@@ -34,8 +39,7 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:7166/api/\"")
-        }
+            buildConfigField("String", "BASE_URL", "\"http://10.0.2.2:7166/\"")        }
     }
 
     compileOptions {
@@ -117,4 +121,8 @@ dependencies {
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
     debugImplementation("androidx.compose.ui:ui-tooling")
     debugImplementation("androidx.compose.ui:ui-test-manifest")
+
+    // Google Sign-In
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
 }

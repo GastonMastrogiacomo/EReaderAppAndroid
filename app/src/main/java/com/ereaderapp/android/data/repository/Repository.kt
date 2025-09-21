@@ -3,6 +3,7 @@ package com.ereaderapp.android.data.repository
 import com.ereaderapp.android.data.api.*
 import com.ereaderapp.android.data.local.TokenManager
 import com.ereaderapp.android.data.models.*
+import com.ereaderapp.android.ui.auth.GoogleAuthService
 import kotlinx.coroutines.flow.Flow
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -10,7 +11,8 @@ import javax.inject.Singleton
 @Singleton
 class Repository @Inject constructor(
     private val apiService: ApiService,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val googleAuthService: GoogleAuthService
 ) {
 
     // Authentication
@@ -50,6 +52,33 @@ class Repository @Inject constructor(
 
     suspend fun logout() {
         tokenManager.clearAuthData()
+    }
+
+    suspend fun googleLogin(idToken: String): Result<LoginResponse> {
+        return try {
+            val response = apiService.googleLogin(GoogleLoginRequest(idToken))
+            if (response.isSuccessful && response.body() != null) {
+                val loginResponse = response.body()!!
+                if (loginResponse.success && loginResponse.token != null && loginResponse.user != null) {
+                    tokenManager.saveAuthData(loginResponse.token, loginResponse.user)
+                }
+                Result.success(loginResponse)
+            } else {
+                Result.failure(Exception("Google login failed: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    fun getGoogleSignInIntent() = googleAuthService.getSignInIntent()
+
+    suspend fun handleGoogleSignInResult(data: android.content.Intent?): Result<LoginResponse> {
+        val tokenResult = googleAuthService.handleSignInResult(data)
+        return tokenResult.fold(
+            onSuccess = { idToken -> googleLogin(idToken) },
+            onFailure = { Result.failure(it) }
+        )
     }
 
     fun isLoggedIn(): Boolean {

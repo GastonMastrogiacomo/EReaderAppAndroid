@@ -6,18 +6,22 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // Authentication
-    @POST("auth/login")
+    // Authentication endpoints - matching your web app
+    @POST("api/auth/login")
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 
-    @POST("auth/register")
+    @POST("api/auth/register")
     suspend fun register(@Body registerRequest: RegisterRequest): Response<LoginResponse>
 
-    @POST("auth/validate")
+    @POST("api/auth/validate")
     suspend fun validateToken(): Response<ApiResponse<User>>
 
-    // Books
-    @GET("books")
+    // Google OAuth login (if your backend supports it)
+    @POST("api/auth/google")
+    suspend fun loginWithGoogle(@Body googleLoginRequest: GoogleLoginRequest): Response<LoginResponse>
+
+    // Books endpoints - matching your web app's BooksApiController
+    @GET("api/booksapi")
     suspend fun getBooks(
         @Query("search") search: String? = null,
         @Query("categoryId") categoryId: Int? = null,
@@ -26,48 +30,63 @@ interface ApiService {
         @Query("pageSize") pageSize: Int = 10
     ): Response<BooksResponse>
 
-    @GET("books/{id}")
-    suspend fun getBook(@Path("id") id: Int): Response<ApiResponse<Book>>
+    @GET("api/booksapi/{id}")
+    suspend fun getBook(@Path("id") id: Int): Response<ApiResponse<BookDetails>>
 
-    @GET("books/popular")
+    @GET("api/booksapi/popular")
     suspend fun getPopularBooks(@Query("limit") limit: Int = 10): Response<ApiResponse<List<Book>>>
 
-    @GET("books/recent")
+    @GET("api/booksapi/recent")
     suspend fun getRecentBooks(@Query("limit") limit: Int = 10): Response<ApiResponse<List<Book>>>
 
-    @GET("books/categories")
+    @GET("api/booksapi/categories")
     suspend fun getCategories(): Response<ApiResponse<List<Category>>>
 
-    // User Profile
-    @GET("user/profile")
+    // User Profile endpoints - matching your web app's UserApiController
+    @GET("api/userapi/profile")
     suspend fun getUserProfile(): Response<ApiResponse<UserProfile>>
 
-    @GET("user/reading-activity")
+    @GET("api/userapi/reading-activity")
     suspend fun getReadingActivity(): Response<ApiResponse<List<ReadingActivity>>>
 
-    // Libraries
-    @GET("libraries")
+    // Libraries endpoints - matching your web app's LibrariesApiController
+    @GET("api/librariesapi")
     suspend fun getLibraries(): Response<ApiResponse<List<Library>>>
 
-    @GET("libraries/{id}")
-    suspend fun getLibrary(@Path("id") id: Int): Response<ApiResponse<Library>>
+    @GET("api/librariesapi/{id}")
+    suspend fun getLibrary(@Path("id") id: Int): Response<ApiResponse<LibraryDetails>>
 
-    @POST("libraries")
+    @POST("api/librariesapi")
     suspend fun createLibrary(@Body request: CreateLibraryRequest): Response<ApiResponse<Library>>
 
-    @POST("libraries/{libraryId}/books/{bookId}")
+    @POST("api/librariesapi/{libraryId}/books/{bookId}")
     suspend fun addBookToLibrary(
         @Path("libraryId") libraryId: Int,
         @Path("bookId") bookId: Int
     ): Response<ApiResponse<Any>>
 
-    @DELETE("libraries/{libraryId}/books/{bookId}")
+    @DELETE("api/librariesapi/{libraryId}/books/{bookId}")
     suspend fun removeBookFromLibrary(
         @Path("libraryId") libraryId: Int,
         @Path("bookId") bookId: Int
     ): Response<ApiResponse<Any>>
+
+    // Reading state endpoints
+    @GET("api/readingapi/state/{bookId}")
+    suspend fun getReadingState(@Path("bookId") bookId: Int): Response<ApiResponse<ReadingState>>
+
+    @POST("api/readingapi/state")
+    suspend fun saveReadingState(@Body request: SaveReadingStateRequest): Response<ApiResponse<Any>>
+
+    // Reviews endpoints
+    @POST("api/reviews")
+    suspend fun createReview(@Body request: CreateReviewRequest): Response<ApiResponse<Review>>
+
+    @DELETE("api/reviews/{id}")
+    suspend fun deleteReview(@Path("id") id: Int): Response<ApiResponse<Any>>
 }
 
+// Request/Response models
 data class LoginRequest(
     val email: String,
     val password: String
@@ -79,42 +98,71 @@ data class RegisterRequest(
     val password: String
 )
 
+data class GoogleLoginRequest(
+    val idToken: String
+)
+
 data class CreateLibraryRequest(
     val name: String
 )
 
-data class Category(
-    val id: Int,
-    val name: String,
-    val bookCount: Int
-)
-
-data class UserProfile(
-    val id: Int,
-    val name: String,
-    val email: String,
-    val profilePicture: String?,
-    val role: String,
-    val createdAt: String,
-    val statistics: UserStatistics
-)
-
-data class UserStatistics(
-    val totalBooksRead: Int,
-    val totalPagesRead: Int,
-    val totalReadingHours: Double,
-    val totalReviews: Int,
-    val totalLibraries: Int
-)
-
-data class ReadingActivity(
+data class SaveReadingStateRequest(
     val bookId: Int,
-    val book: Book,
-    val firstAccess: String,
-    val lastAccess: String,
-    val accessCount: Int,
-    val totalPagesRead: Int,
-    val lastPageRead: Int,
-    val totalReadingTimeMinutes: Int,
-    val readingProgress: Double
+    val currentPage: Int,
+    val zoomLevel: Float,
+    val viewMode: String,
+    val readingTimeMinutes: Int
+)
+
+data class CreateReviewRequest(
+    val bookId: Int,
+    val comment: String,
+    val rating: Int
+)
+
+// Extended models
+data class BookDetails(
+    val id: Int,
+    val title: String,
+    val author: String,
+    val description: String?,
+    val imageLink: String?,
+    val releaseDate: String?,
+    val pageCount: Int?,
+    val score: Double?,
+    val authorBio: String?,
+    val pdfPath: String?,
+    val averageRating: Double,
+    val reviewCount: Int,
+    val categories: List<Category>,
+    val reviews: List<Review>
+)
+
+data class LibraryDetails(
+    val id: Int,
+    val name: String,
+    val bookCount: Int,
+    val books: List<Book>
+)
+
+data class Review(
+    val id: Int,
+    val comment: String,
+    val rating: Int,
+    val createdAt: String,
+    val user: UserInfo
+)
+
+data class UserInfo(
+    val id: Int,
+    val name: String,
+    val profilePicture: String?
+)
+
+data class ReadingState(
+    val bookId: Int,
+    val currentPage: Int,
+    val zoomLevel: Float,
+    val viewMode: String,
+    val lastAccessed: String?
 )

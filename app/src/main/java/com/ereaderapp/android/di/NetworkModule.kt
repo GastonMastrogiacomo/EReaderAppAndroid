@@ -42,9 +42,14 @@ object NetworkModule {
             val request = if (token != null) {
                 chain.request().newBuilder()
                     .addHeader("Authorization", "Bearer $token")
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Accept", "application/json")
                     .build()
             } else {
-                chain.request()
+                chain.request().newBuilder()
+                    .addHeader("Content-Type", "application/json")
+                    .addHeader("Accept", "application/json")
+                    .build()
             }
             chain.proceed(request)
         }
@@ -80,8 +85,15 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        // Replace with your actual backend URL
+        val baseUrl = if (BuildConfig.DEBUG) {
+            "https://librolibredv.onrender.com/" // Your Render URL
+        } else {
+            "https://librolibredv.onrender.com/" // Your production URL
+        }
+
         return Retrofit.Builder()
-            .baseUrl(BuildConfig.BASE_URL)
+            .baseUrl(baseUrl)
             .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()

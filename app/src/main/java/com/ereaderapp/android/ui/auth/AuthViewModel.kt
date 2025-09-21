@@ -3,6 +3,7 @@ package com.ereaderapp.android.ui.auth
 import androidx.lifecycle.viewModelScope
 import com.ereaderapp.android.data.models.User
 import com.ereaderapp.android.data.repository.Repository
+import com.ereaderapp.android.services.GoogleSignInService
 import com.ereaderapp.android.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AuthViewModel @Inject constructor(
-    private val repository: Repository
+    private val repository: Repository,
+    private val googleSignInService: GoogleSignInService
 ) : BaseViewModel() {
 
     private val _authState = MutableStateFlow<AuthState>(AuthState.Idle)
@@ -51,6 +53,36 @@ class AuthViewModel @Inject constructor(
         }
     }
 
+    fun signInWithGoogle() {
+        executeWithLoading {
+            val signInResult = googleSignInService.signIn()
+            signInResult.fold(
+                onSuccess = { idToken ->
+                    // Send the ID token to your backend
+                    val result = repository.loginWithGoogle(idToken)
+                    result.fold(
+                        onSuccess = { loginResponse ->
+                            if (loginResponse.success) {
+                                _authState.value = AuthState.Authenticated
+                            } else {
+                                setError(loginResponse.message ?: "Google sign-in failed")
+                                _authState.value = AuthState.Unauthenticated
+                            }
+                        },
+                        onFailure = { exception ->
+                            setError(exception.message ?: "Google sign-in failed")
+                            _authState.value = AuthState.Unauthenticated
+                        }
+                    )
+                },
+                onFailure = { exception ->
+                    setError(exception.message ?: "Google sign-in failed")
+                    _authState.value = AuthState.Unauthenticated
+                }
+            )
+        }
+    }
+
     fun register(name: String, email: String, password: String) {
         executeWithLoading {
             val result = repository.register(name, email, password)
@@ -79,7 +111,7 @@ class AuthViewModel @Inject constructor(
         }
     }
 
-    // Add method to validate form inputs
+    // Validation methods remain the same
     fun validateLoginForm(email: String, password: String): String? {
         return when {
             email.isBlank() -> "Email is required"
