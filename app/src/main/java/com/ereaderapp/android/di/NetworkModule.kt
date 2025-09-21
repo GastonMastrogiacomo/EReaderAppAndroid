@@ -1,6 +1,7 @@
 package com.ereaderapp.android.di
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.preferences.preferencesDataStore
 import com.ereaderapp.android.BuildConfig
 import com.ereaderapp.android.data.api.ApiService
@@ -40,25 +41,37 @@ object NetworkModule {
         return Interceptor { chain ->
             val token = tokenManager.getToken()
             val request = if (token != null) {
+                Log.d("NetworkModule", "Adding auth token to request")
                 chain.request().newBuilder()
                     .addHeader("Authorization", "Bearer $token")
                     .addHeader("Content-Type", "application/json")
                     .addHeader("Accept", "application/json")
                     .build()
             } else {
+                Log.d("NetworkModule", "No auth token available")
                 chain.request().newBuilder()
                     .addHeader("Content-Type", "application/json")
                     .addHeader("Accept", "application/json")
                     .build()
             }
-            chain.proceed(request)
+
+            val response = chain.proceed(request)
+            Log.d("NetworkModule", "Response code: ${response.code}")
+
+            if (!response.isSuccessful) {
+                Log.e("NetworkModule", "Request failed: ${response.code} - ${response.message}")
+            }
+
+            response
         }
     }
 
     @Provides
     @Singleton
     fun provideLoggingInterceptor(): HttpLoggingInterceptor {
-        return HttpLoggingInterceptor().apply {
+        return HttpLoggingInterceptor { message ->
+            Log.d("HTTP", message)
+        }.apply {
             level = if (BuildConfig.DEBUG) {
                 HttpLoggingInterceptor.Level.BODY
             } else {
@@ -79,18 +92,15 @@ object NetworkModule {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .writeTimeout(30, TimeUnit.SECONDS)
+            .retryOnConnectionFailure(true)
             .build()
     }
 
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
-        // Replace with your actual backend URL
-        val baseUrl = if (BuildConfig.DEBUG) {
-            "https://librolibredv.onrender.com/" // Your Render URL
-        } else {
-            "https://librolibredv.onrender.com/" // Your production URL
-        }
+        val baseUrl = BuildConfig.BASE_URL
+        Log.d("NetworkModule", "Using base URL: $baseUrl")
 
         return Retrofit.Builder()
             .baseUrl(baseUrl)

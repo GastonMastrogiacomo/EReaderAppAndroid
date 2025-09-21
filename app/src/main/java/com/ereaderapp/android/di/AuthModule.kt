@@ -34,4 +34,12 @@ object AuthModule {
     ): GoogleSignInClient {
         return GoogleSignIn.getClient(context, gso)
     }
+
+    @Provides
+    @Singleton
+    fun provideGoogleAuthService(
+        googleSignInClient: GoogleSignInClient
+    ): GoogleAuthService {
+        return GoogleAuthService(googleSignInClient)
+    }
 }

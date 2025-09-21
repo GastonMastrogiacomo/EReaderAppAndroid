@@ -1,6 +1,7 @@
 package com.ereaderapp.android.ui.auth
 
 import android.content.Intent
+import android.util.Log
 import androidx.lifecycle.viewModelScope
 import com.ereaderapp.android.data.models.User
 import com.ereaderapp.android.data.repository.Repository
@@ -34,18 +35,24 @@ class AuthViewModel @Inject constructor(
 
     fun login(email: String, password: String) {
         executeWithLoading {
+            Log.d("AuthViewModel", "Attempting login for email: $email")
             val result = repository.login(email, password)
             result.fold(
                 onSuccess = { loginResponse ->
+                    Log.d("AuthViewModel", "Login response: ${loginResponse.success}")
                     if (loginResponse.success) {
                         _authState.value = AuthState.Authenticated
                     } else {
-                        setError(loginResponse.message ?: "Login failed")
+                        val errorMsg = loginResponse.message ?: "Login failed"
+                        Log.e("AuthViewModel", "Login failed: $errorMsg")
+                        setError(errorMsg)
                         _authState.value = AuthState.Unauthenticated
                     }
                 },
                 onFailure = { exception ->
-                    setError(exception.message ?: "Login failed")
+                    val errorMsg = exception.message ?: "Login failed"
+                    Log.e("AuthViewModel", "Login exception: $errorMsg", exception)
+                    setError(errorMsg)
                     _authState.value = AuthState.Unauthenticated
                 }
             )
@@ -54,18 +61,24 @@ class AuthViewModel @Inject constructor(
 
     fun register(name: String, email: String, password: String) {
         executeWithLoading {
+            Log.d("AuthViewModel", "Attempting registration for email: $email")
             val result = repository.register(name, email, password)
             result.fold(
                 onSuccess = { registerResponse ->
+                    Log.d("AuthViewModel", "Registration response: ${registerResponse.success}")
                     if (registerResponse.success) {
                         _authState.value = AuthState.Authenticated
                     } else {
-                        setError(registerResponse.message ?: "Registration failed")
+                        val errorMsg = registerResponse.message ?: "Registration failed"
+                        Log.e("AuthViewModel", "Registration failed: $errorMsg")
+                        setError(errorMsg)
                         _authState.value = AuthState.Unauthenticated
                     }
                 },
                 onFailure = { exception ->
-                    setError(exception.message ?: "Registration failed")
+                    val errorMsg = exception.message ?: "Registration failed"
+                    Log.e("AuthViewModel", "Registration exception: $errorMsg", exception)
+                    setError(errorMsg)
                     _authState.value = AuthState.Unauthenticated
                 }
             )
@@ -74,28 +87,45 @@ class AuthViewModel @Inject constructor(
 
     fun signInWithGoogle() {
         executeWithLoading {
+            Log.d("AuthViewModel", "Starting Google sign-in")
             val signInResult = repository.signInWithGoogle()
             signInResult.fold(
                 onSuccess = { idToken ->
+                    Log.d("AuthViewModel", "Google sign-in successful, sending token to backend")
                     // Send the ID token to your backend
                     val result = repository.googleLogin(idToken)
                     result.fold(
                         onSuccess = { loginResponse ->
+                            Log.d("AuthViewModel", "Backend Google login response: ${loginResponse.success}")
                             if (loginResponse.success) {
                                 _authState.value = AuthState.Authenticated
                             } else {
-                                setError(loginResponse.message ?: "Google sign-in failed")
+                                val errorMsg = loginResponse.message ?: "Google sign-in failed"
+                                Log.e("AuthViewModel", "Backend Google login failed: $errorMsg")
+                                setError(errorMsg)
                                 _authState.value = AuthState.Unauthenticated
                             }
                         },
                         onFailure = { exception ->
-                            setError(exception.message ?: "Google sign-in failed")
+                            val errorMsg = exception.message ?: "Google sign-in failed"
+                            Log.e("AuthViewModel", "Backend Google login exception: $errorMsg", exception)
+                            setError(errorMsg)
                             _authState.value = AuthState.Unauthenticated
                         }
                     )
                 },
                 onFailure = { exception ->
-                    setError(exception.message ?: "Google sign-in failed")
+                    val errorMsg = when {
+                        exception.message?.contains("10") == true ->
+                            "Google Sign-In configuration error. Please check SHA-1 fingerprint and client ID."
+                        exception.message?.contains("12") == true ->
+                            "Google Sign-In quota exceeded or API not enabled."
+                        exception.message?.contains("7") == true ->
+                            "Network error. Please check your internet connection."
+                        else -> exception.message ?: "Google sign-in failed"
+                    }
+                    Log.e("AuthViewModel", "Google sign-in failed: $errorMsg", exception)
+                    setError(errorMsg)
                     _authState.value = AuthState.Unauthenticated
                 }
             )
@@ -108,18 +138,32 @@ class AuthViewModel @Inject constructor(
 
     fun handleGoogleSignInResult(data: Intent?) {
         executeWithLoading {
+            Log.d("AuthViewModel", "Handling Google sign-in result")
             val result = repository.handleGoogleSignInResult(data)
             result.fold(
                 onSuccess = { loginResponse ->
+                    Log.d("AuthViewModel", "Google sign-in result successful: ${loginResponse.success}")
                     if (loginResponse.success) {
                         _authState.value = AuthState.Authenticated
                     } else {
-                        setError(loginResponse.message ?: "Google sign-in failed")
+                        val errorMsg = loginResponse.message ?: "Google sign-in failed"
+                        Log.e("AuthViewModel", "Google sign-in result failed: $errorMsg")
+                        setError(errorMsg)
                         _authState.value = AuthState.Unauthenticated
                     }
                 },
                 onFailure = { exception ->
-                    setError(exception.message ?: "Google sign-in failed")
+                    val errorMsg = when {
+                        exception.message?.contains("10") == true ->
+                            "Google Sign-In configuration error. Please check SHA-1 fingerprint and client ID."
+                        exception.message?.contains("12") == true ->
+                            "Google Sign-In quota exceeded or API not enabled."
+                        exception.message?.contains("7") == true ->
+                            "Network error. Please check your internet connection."
+                        else -> exception.message ?: "Google sign-in failed"
+                    }
+                    Log.e("AuthViewModel", "Google sign-in result failed: $errorMsg", exception)
+                    setError(errorMsg)
                     _authState.value = AuthState.Unauthenticated
                 }
             )
@@ -128,6 +172,7 @@ class AuthViewModel @Inject constructor(
 
     fun logout() {
         viewModelScope.launch {
+            Log.d("AuthViewModel", "Logging out")
             repository.logout()
             _authState.value = AuthState.Unauthenticated
             _user.value = null

@@ -27,7 +27,10 @@ android {
         buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
 
         // Google OAuth Web Client ID (from Google Cloud Console)
+        // buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-td3362428inc8uoq153pe10hngafbft7.apps.googleusercontent.com\"")
+
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
+
     }
 
     buildTypes {
@@ -40,6 +43,10 @@ android {
         }
         debug {
             buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
+            //buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-td3362428inc8uoq153pe10hngafbft7.apps.googleusercontent.com\"")
+
+            buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
+
         }
     }
 
