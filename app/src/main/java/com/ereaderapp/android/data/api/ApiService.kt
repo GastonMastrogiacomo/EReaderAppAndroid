@@ -6,94 +6,115 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // Authentication endpoints - matching your web app
-    @POST("api/auth/login")
+    // Authentication endpoints - Updated for Supabase REST API
+    // Note: These endpoints depend on your Supabase Edge Functions or RPC setup
+    @POST("rest/v1/rpc/login")  // or "auth/v1/token" for Supabase Auth
     suspend fun login(@Body loginRequest: LoginRequest): Response<LoginResponse>
 
-    @POST("api/auth/register")
+    @POST("rest/v1/rpc/register")  // or "auth/v1/signup" for Supabase Auth
     suspend fun register(@Body registerRequest: RegisterRequest): Response<LoginResponse>
 
-    @POST("api/auth/validate")
+    @POST("rest/v1/rpc/validate_token")
     suspend fun validateToken(): Response<ApiResponse<User>>
 
-    // Google OAuth login (if your backend supports it)
-    @POST("api/auth/google")
+    // Google OAuth - Supabase has built-in OAuth support
+    @POST("rest/v1/rpc/google_login")
     suspend fun loginWithGoogle(@Body googleLoginRequest: GoogleLoginRequest): Response<LoginResponse>
 
-    // Books endpoints - matching your web app's BooksApiController
-    @GET("api/booksapi")
+    // Books endpoints - Updated for Supabase REST API
+    @GET("rest/v1/books")
     suspend fun getBooks(
         @Query("search") search: String? = null,
-        @Query("categoryId") categoryId: Int? = null,
-        @Query("sortBy") sortBy: String? = null,
-        @Query("page") page: Int = 1,
-        @Query("pageSize") pageSize: Int = 10
-    ): Response<BooksResponse>
+        @Query("category_id") categoryId: Int? = null,
+        @Query("order") sortBy: String? = null,
+        @Query("offset") offset: Int = 0,
+        @Query("limit") limit: Int = 20
+    ): Response<List<Book>>  // Supabase returns arrays directly
 
-    @GET("api/booksapi/{id}")
-    suspend fun getBook(@Path("id") id: Int): Response<ApiResponse<BookDetails>>
+    @GET("rest/v1/books")
+    suspend fun getBook(
+        @Query("id") id: Int,
+        @Query("select") select: String = "*"
+    ): Response<List<BookDetails>>  // Supabase returns arrays, take first item
 
-    @GET("api/booksapi/popular")
-    suspend fun getPopularBooks(@Query("limit") limit: Int = 10): Response<ApiResponse<List<Book>>>
+    @GET("rest/v1/books")
+    suspend fun getPopularBooks(
+        @Query("order") order: String = "score.desc",
+        @Query("limit") limit: Int = 10
+    ): Response<List<Book>>
 
-    @GET("api/booksapi/recent")
-    suspend fun getRecentBooks(@Query("limit") limit: Int = 10): Response<ApiResponse<List<Book>>>
+    @GET("rest/v1/books")
+    suspend fun getRecentBooks(
+        @Query("order") order: String = "created_at.desc",
+        @Query("limit") limit: Int = 10
+    ): Response<List<Book>>
 
-    @GET("api/booksapi/categories")
-    suspend fun getCategories(): Response<ApiResponse<List<Category>>>
+    @GET("rest/v1/categories")
+    suspend fun getCategories(): Response<List<Category>>
 
-    // User Profile endpoints - matching your web app's UserApiController
-    @GET("api/userapi/profile")
-    suspend fun getUserProfile(): Response<ApiResponse<UserProfile>>
+    // User Profile endpoints
+    @GET("rest/v1/user_profiles")
+    suspend fun getUserProfile(
+        @Query("user_id") userId: Int? = null
+    ): Response<List<UserProfile>>
 
-    @GET("api/userapi/reading-activity")
-    suspend fun getReadingActivity(): Response<ApiResponse<List<ReadingActivity>>>
+    @GET("rest/v1/reading_activities")
+    suspend fun getReadingActivity(
+        @Query("user_id") userId: Int? = null
+    ): Response<List<ReadingActivity>>
 
-    // Libraries endpoints - matching your web app's LibrariesApiController
-    @GET("api/librariesapi")
-    suspend fun getLibraries(): Response<ApiResponse<List<Library>>>
+    // Libraries endpoints
+    @GET("rest/v1/libraries")
+    suspend fun getLibraries(
+        @Query("user_id") userId: Int? = null
+    ): Response<List<Library>>
 
-    @GET("api/librariesapi/{id}")
-    suspend fun getLibrary(@Path("id") id: Int): Response<ApiResponse<LibraryDetails>>
+    @GET("rest/v1/libraries")
+    suspend fun getLibrary(
+        @Query("id") id: Int,
+        @Query("select") select: String = "*,library_books(book:books(*))"
+    ): Response<List<LibraryDetails>>
 
-    @POST("api/librariesapi")
-    suspend fun createLibrary(@Body request: CreateLibraryRequest): Response<ApiResponse<Library>>
+    @POST("rest/v1/libraries")
+    suspend fun createLibrary(@Body request: CreateLibraryRequest): Response<Library>
 
-    @POST("api/librariesapi/{libraryId}/books/{bookId}")
-    suspend fun addBookToLibrary(
-        @Path("libraryId") libraryId: Int,
-        @Path("bookId") bookId: Int
-    ): Response<ApiResponse<Any>>
+    @POST("rest/v1/library_books")
+    suspend fun addBookToLibrary(@Body request: AddBookToLibraryRequest): Response<Any>
 
-    @DELETE("api/librariesapi/{libraryId}/books/{bookId}")
+    @DELETE("rest/v1/library_books")
     suspend fun removeBookFromLibrary(
-        @Path("libraryId") libraryId: Int,
-        @Path("bookId") bookId: Int
-    ): Response<ApiResponse<Any>>
+        @Query("library_id") libraryId: Int,
+        @Query("book_id") bookId: Int
+    ): Response<Any>
 
     // Reading state endpoints
-    @GET("api/readingapi/state/{bookId}")
-    suspend fun getReadingState(@Path("bookId") bookId: Int): Response<ApiResponse<ReadingState>>
+    @GET("rest/v1/reading_states")
+    suspend fun getReadingState(
+        @Query("book_id") bookId: Int,
+        @Query("user_id") userId: Int? = null
+    ): Response<List<ReadingState>>
 
-    @POST("api/readingapi/state")
-    suspend fun saveReadingState(@Body request: SaveReadingStateRequest): Response<ApiResponse<Any>>
+    @POST("rest/v1/reading_states")
+    suspend fun saveReadingState(@Body request: SaveReadingStateRequest): Response<Any>
 
     // Reviews endpoints
-    @POST("api/reviews")
-    suspend fun createReview(@Body request: CreateReviewRequest): Response<ApiResponse<Review>>
+    @POST("rest/v1/reviews")
+    suspend fun createReview(@Body request: CreateReviewRequest): Response<Review>
 
-    @DELETE("api/reviews/{id}")
-    suspend fun deleteReview(@Path("id") id: Int): Response<ApiResponse<Any>>
+    @DELETE("rest/v1/reviews")
+    suspend fun deleteReview(
+        @Query("id") id: Int
+    ): Response<Any>
 }
 
-// Request/Response models
+// Request/Response models - Updated for Supabase
 data class LoginRequest(
     val email: String,
     val password: String
 )
 
 data class RegisterRequest(
-    val name: String,
+    val name: String? = null,  // Supabase Auth uses metadata for extra fields
     val email: String,
     val password: String
 )
@@ -103,66 +124,74 @@ data class GoogleLoginRequest(
 )
 
 data class CreateLibraryRequest(
-    val name: String
+    val name: String,
+    val user_id: Int? = null  // Will be set by server from auth context
+)
+
+data class AddBookToLibraryRequest(
+    val library_id: Int,
+    val book_id: Int
 )
 
 data class SaveReadingStateRequest(
-    val bookId: Int,
-    val currentPage: Int,
-    val zoomLevel: Float,
-    val viewMode: String,
-    val readingTimeMinutes: Int
+    val book_id: Int,
+    val user_id: Int? = null,  // Will be set by server from auth context
+    val current_page: Int,
+    val zoom_level: Float,
+    val view_mode: String,
+    val reading_time_minutes: Int
 )
 
 data class CreateReviewRequest(
-    val bookId: Int,
+    val book_id: Int,
+    val user_id: Int? = null,  // Will be set by server from auth context
     val comment: String,
     val rating: Int
 )
 
-// Extended models
+// Extended models remain the same but with snake_case for Supabase
 data class BookDetails(
     val id: Int,
     val title: String,
     val author: String,
     val description: String?,
-    val imageLink: String?,
-    val releaseDate: String?,
-    val pageCount: Int?,
+    val image_link: String?,
+    val release_date: String?,
+    val page_count: Int?,
     val score: Double?,
-    val authorBio: String?,
-    val pdfPath: String?,
-    val averageRating: Double,
-    val reviewCount: Int,
-    val categories: List<Category>,
-    val reviews: List<Review>
+    val author_bio: String?,
+    val pdf_path: String?,
+    val average_rating: Double,
+    val review_count: Int,
+    val categories: List<Category>? = null,
+    val reviews: List<Review>? = null
 )
 
 data class LibraryDetails(
     val id: Int,
     val name: String,
-    val bookCount: Int,
-    val books: List<Book>
+    val book_count: Int? = null,
+    val books: List<Book>? = null
 )
 
 data class Review(
     val id: Int,
     val comment: String,
     val rating: Int,
-    val createdAt: String,
-    val user: UserInfo
+    val created_at: String,
+    val user: UserInfo? = null
 )
 
 data class UserInfo(
     val id: Int,
-    val name: String,
-    val profilePicture: String?
+    val name: String? = null,
+    val profile_picture: String? = null
 )
 
 data class ReadingState(
-    val bookId: Int,
-    val currentPage: Int,
-    val zoomLevel: Float,
-    val viewMode: String,
-    val lastAccessed: String?
+    val book_id: Int,
+    val current_page: Int,
+    val zoom_level: Float,
+    val view_mode: String,
+    val last_accessed: String?
 )

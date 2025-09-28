@@ -4,7 +4,6 @@ plugins {
     id("com.google.devtools.ksp") version "1.9.20-1.0.14"
     id("dagger.hilt.android.plugin")
     id("kotlin-parcelize")
-    // REMOVED: id("com.google.gms.google-services") - Not needed for Supabase
 }
 
 android {
@@ -23,14 +22,10 @@ android {
             useSupportLibrary = true
         }
 
-        // Your backend URL (should handle Supabase auth)
-        buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
+        buildConfigField("String", "BASE_URL", "\"https://slxaxxpcayfufbslqebn.supabase.co/\"")
 
         // Google OAuth Web Client ID (from Google Cloud Console)
-        // buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-td3362428inc8uoq153pe10hngafbft7.apps.googleusercontent.com\"")
-
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
-
     }
 
     buildTypes {
@@ -42,11 +37,8 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
-            //buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-td3362428inc8uoq153pe10hngafbft7.apps.googleusercontent.com\"")
-
+            buildConfigField("String", "BASE_URL", "\"https://slxaxxpcayfufbslqebn.supabase.co/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
-
         }
     }
 
