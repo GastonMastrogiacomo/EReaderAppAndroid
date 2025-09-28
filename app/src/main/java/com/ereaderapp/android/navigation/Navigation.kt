@@ -55,140 +55,144 @@ val bottomNavItems = listOf(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EReaderNavigation() {
-    val navController = rememberNavController()
     val authViewModel: AuthViewModel = hiltViewModel()
     val authState by authViewModel.authState.collectAsState()
+
+    when (authState) {
+        is com.ereaderapp.android.ui.auth.AuthState.Authenticated -> {
+            MainAppNavigation()
+        }
+        else -> {
+            AuthScreen(
+                onAuthSuccess = {
+                    // The auth state will automatically change to Authenticated
+                    // and trigger a recomposition to show MainAppNavigation
+                }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MainAppNavigation() {
+    val navController = rememberNavController()
 
     // Track the selected book and library for navigation
     var selectedBook by remember { mutableStateOf<Book?>(null) }
     var selectedLibrary by remember { mutableStateOf<com.ereaderapp.android.data.models.Library?>(null) }
 
-    when (authState) {
-        is com.ereaderapp.android.ui.auth.AuthState.Authenticated -> {
-            Scaffold(
-                bottomBar = {
-                    val navBackStackEntry by navController.currentBackStackEntryAsState()
-                    val currentDestination = navBackStackEntry?.destination
+    Scaffold(
+        bottomBar = {
+            val navBackStackEntry by navController.currentBackStackEntryAsState()
+            val currentDestination = navBackStackEntry?.destination
 
-                    // Only show bottom bar on main screens
-                    if (currentDestination?.route in bottomNavItems.map { it.screen.route }) {
-                        NavigationBar {
-                            bottomNavItems.forEach { item ->
-                                NavigationBarItem(
-                                    icon = { Icon(item.icon, contentDescription = item.title) },
-                                    label = { Text(item.title) },
-                                    selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true,
-                                    onClick = {
-                                        navController.navigate(item.screen.route) {
-                                            popUpTo(navController.graph.findStartDestination().id) {
-                                                saveState = true
-                                            }
-                                            launchSingleTop = true
-                                            restoreState = true
-                                        }
+            // Only show bottom bar on main screens
+            if (currentDestination?.route in bottomNavItems.map { it.screen.route }) {
+                NavigationBar {
+                    bottomNavItems.forEach { item ->
+                        NavigationBarItem(
+                            icon = { Icon(item.icon, contentDescription = item.title) },
+                            label = { Text(item.title) },
+                            selected = currentDestination?.hierarchy?.any { it.route == item.screen.route } == true,
+                            onClick = {
+                                navController.navigate(item.screen.route) {
+                                    popUpTo(navController.graph.findStartDestination().id) {
+                                        saveState = true
                                     }
-                                )
-                            }
-                        }
-                    }
-                }
-            ) { innerPadding ->
-                NavHost(
-                    navController = navController,
-                    startDestination = Screen.Home.route,
-                    modifier = Modifier.padding(innerPadding)
-                ) {
-                    composable(Screen.Home.route) {
-                        HomeScreen(
-                            onBookClick = { book ->
-                                selectedBook = book
-                                navController.navigate(Screen.BookDetails.route)
-                            }
-                        )
-                    }
-
-                    composable(Screen.Books.route) {
-                        BooksScreen(
-                            onBookClick = { book ->
-                                selectedBook = book
-                                navController.navigate(Screen.BookDetails.route)
-                            }
-                        )
-                    }
-
-                    composable(Screen.Libraries.route) {
-                        LibrariesScreen(
-                            onLibraryClick = { library ->
-                                selectedLibrary = library
-                                navController.navigate(Screen.LibraryDetails.route)
-                            }
-                        )
-                    }
-
-                    composable(Screen.Profile.route) {
-                        ProfileScreen(
-                            onEditProfile = {
-                                // TODO: Navigate to edit profile screen
-                            },
-                            onLogout = {
-                                navController.navigate(Screen.Auth.route) {
-                                    popUpTo(0) { inclusive = true }
+                                    launchSingleTop = true
+                                    restoreState = true
                                 }
                             }
                         )
-                    }
-
-                    composable(Screen.BookDetails.route) {
-                        selectedBook?.let { book ->
-                            BookDetailsScreen(
-                                book = book,
-                                onNavigateBack = {
-                                    navController.popBackStack()
-                                },
-                                onReadBook = { bookToRead ->
-                                    selectedBook = bookToRead
-                                    navController.navigate(Screen.PdfReader.route)
-                                }
-                            )
-                        }
-                    }
-
-                    composable(Screen.LibraryDetails.route) {
-                        selectedLibrary?.let { library ->
-                            LibraryDetailsScreen(
-                                library = library,
-                                onNavigateBack = {
-                                    navController.popBackStack()
-                                },
-                                onBookClick = { book ->
-                                    selectedBook = book
-                                    navController.navigate(Screen.BookDetails.route)
-                                }
-                            )
-                        }
-                    }
-
-                    composable(Screen.PdfReader.route) {
-                        selectedBook?.let { book ->
-                            PdfReaderScreen(
-                                book = book,
-                                onNavigateBack = {
-                                    navController.popBackStack()
-                                }
-                            )
-                        }
                     }
                 }
             }
         }
-        else -> {
-            AuthScreen(
-                onAuthSuccess = {
-                    navController.navigate(Screen.Home.route) {
-                        popUpTo(0) { inclusive = true }
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = Screen.Home.route,
+            modifier = Modifier.padding(innerPadding)
+        ) {
+            composable(Screen.Home.route) {
+                HomeScreen(
+                    onBookClick = { book ->
+                        selectedBook = book
+                        navController.navigate(Screen.BookDetails.route)
                     }
+                )
+            }
+
+            composable(Screen.Books.route) {
+                BooksScreen(
+                    onBookClick = { book ->
+                        selectedBook = book
+                        navController.navigate(Screen.BookDetails.route)
+                    }
+                )
+            }
+
+            composable(Screen.Libraries.route) {
+                LibrariesScreen(
+                    onLibraryClick = { library ->
+                        selectedLibrary = library
+                        navController.navigate(Screen.LibraryDetails.route)
+                    }
+                )
+            }
+
+            composable(Screen.Profile.route) {
+                ProfileScreen(
+                    onEditProfile = {
+                        // TODO: Navigate to edit profile screen
+                    },
+                    onLogout = {
+                        // The auth state will change and trigger navigation to auth screen
+                    }
+                )
+            }
+
+            composable(Screen.BookDetails.route) {
+                selectedBook?.let { book ->
+                    BookDetailsScreen(
+                        book = book,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onReadBook = { bookToRead ->
+                            selectedBook = bookToRead
+                            navController.navigate(Screen.PdfReader.route)
+                        }
+                    )
                 }
-            )
+            }
+
+            composable(Screen.LibraryDetails.route) {
+                selectedLibrary?.let { library ->
+                    LibraryDetailsScreen(
+                        library = library,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        },
+                        onBookClick = { book ->
+                            selectedBook = book
+                            navController.navigate(Screen.BookDetails.route)
+                        }
+                    )
+                }
+            }
+
+            composable(Screen.PdfReader.route) {
+                selectedBook?.let { book ->
+                    PdfReaderScreen(
+                        book = book,
+                        onNavigateBack = {
+                            navController.popBackStack()
+                        }
+                    )
+                }
+            }
         }
     }
 }

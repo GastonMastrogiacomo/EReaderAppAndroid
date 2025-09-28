@@ -1,8 +1,8 @@
 package com.ereaderapp.android.ui.profile
 
 import androidx.lifecycle.viewModelScope
-import com.ereaderapp.android.data.api.ReadingActivity
-import com.ereaderapp.android.data.api.UserProfile
+import com.ereaderapp.android.data.models.ReadingActivity
+import com.ereaderapp.android.data.models.UserProfile
 import com.ereaderapp.android.data.repository.Repository
 import com.ereaderapp.android.ui.base.BaseViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
 
 @HiltViewModel
 class ProfileViewModel @Inject constructor(

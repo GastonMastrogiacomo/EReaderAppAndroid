@@ -1,4 +1,4 @@
-package com.ereaderapp.android.data.api
+package com.ereaderapp.android.data.models
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName

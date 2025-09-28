@@ -22,9 +22,7 @@ android {
             useSupportLibrary = true
         }
 
-        buildConfigField("String", "BASE_URL", "\"https://slxaxxpcayfufbslqebn.supabase.co/\"")
-
-        // Google OAuth Web Client ID (from Google Cloud Console)
+        buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
         buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
     }
 
@@ -37,18 +35,19 @@ android {
             )
         }
         debug {
-            buildConfigField("String", "BASE_URL", "\"https://slxaxxpcayfufbslqebn.supabase.co/\"")
+            buildConfigField("String", "BASE_URL", "\"https://librolibredv.onrender.com/\"")
             buildConfigField("String", "GOOGLE_WEB_CLIENT_ID", "\"40990533018-lmg2r9bivvkmt4apig9rtv8h19h63rnf.apps.googleusercontent.com\"")
         }
     }
 
+    // Change to Java 11
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
 
     buildFeatures {

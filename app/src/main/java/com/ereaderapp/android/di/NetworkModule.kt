@@ -26,9 +26,6 @@ private val Context.dataStore by preferencesDataStore("app_preferences")
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-    // SUPABASE CONFIGURATION
-    private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNseGF4eHBjYXlmdWZic2xxZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzAxODgsImV4cCI6MjA2NDkwNjE4OH0.y-0qdnJLa37MawOa8ABDTloNTqUpn66ql-DDzynDj_k"
-
     @Provides
     @Singleton
     fun provideDataStore(@ApplicationContext context: Context) = context.dataStore
@@ -41,17 +38,16 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideSupabaseAuthInterceptor(tokenManager: TokenManager): Interceptor {
+    fun provideAuthInterceptor(tokenManager: TokenManager): Interceptor {
         return Interceptor { chain ->
             val token = tokenManager.getToken()
             val requestBuilder = chain.request().newBuilder()
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Accept", "application/json")
-                .addHeader("apikey", SUPABASE_ANON_KEY)
 
             // Add Authorization header if token exists
             if (token != null) {
-                Log.d("NetworkModule", "Adding Supabase auth token to request")
+                Log.d("NetworkModule", "Adding auth token to request")
                 requestBuilder.addHeader("Authorization", "Bearer $token")
             } else {
                 Log.d("NetworkModule", "No auth token available")

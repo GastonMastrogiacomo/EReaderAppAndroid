@@ -16,33 +16,55 @@ class Repository @Inject constructor(
     private val googleAuthService: GoogleAuthService
 ) {
 
-    // CORREGIDO: Google Login usando Supabase Auth
+    // Authentication methods
+    suspend fun login(email: String, password: String): Result<LoginResponse> {
+        return try {
+            val request = LoginRequest(email, password)
+            val response = apiService.login(request)
+
+            if (response.isSuccessful && response.body() != null) {
+                val loginResponse = response.body()!!
+                if (loginResponse.success && loginResponse.token != null && loginResponse.user != null) {
+                    tokenManager.saveAuthData(loginResponse.token, loginResponse.user)
+                }
+                Result.success(loginResponse)
+            } else {
+                Result.failure(Exception("Login failed: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    suspend fun register(name: String, email: String, password: String): Result<LoginResponse> {
+        return try {
+            val request = RegisterRequest(name, email, password)
+            val response = apiService.register(request)
+
+            if (response.isSuccessful && response.body() != null) {
+                val loginResponse = response.body()!!
+                if (loginResponse.success && loginResponse.token != null && loginResponse.user != null) {
+                    tokenManager.saveAuthData(loginResponse.token, loginResponse.user)
+                }
+                Result.success(loginResponse)
+            } else {
+                Result.failure(Exception("Registration failed: ${response.message()}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun googleLogin(idToken: String): Result<LoginResponse> {
         return try {
-            val request = SupabaseGoogleLoginRequest(id_token = idToken)
+            val request = GoogleLoginRequest(idToken)
             val response = apiService.loginWithGoogle(request)
 
             if (response.isSuccessful && response.body() != null) {
-                val supabaseAuth = response.body()!!
-
-                val user = User(
-                    id = supabaseAuth.user.id.toIntOrNull() ?: 0,
-                    name = supabaseAuth.user.user_metadata.name ?: supabaseAuth.user.user_metadata.full_name ?: "",
-                    email = supabaseAuth.user.email,
-                    profilePicture = supabaseAuth.user.user_metadata.picture ?: supabaseAuth.user.user_metadata.avatar_url,
-                    role = "User",
-                    createdAt = supabaseAuth.user.created_at
-                )
-
-                val loginResponse = LoginResponse(
-                    success = true,
-                    token = supabaseAuth.access_token,
-                    user = user,
-                    expiresIn = supabaseAuth.expires_in.toLong(),
-                    message = "Login successful"
-                )
-
-                tokenManager.saveAuthData(supabaseAuth.access_token, user)
+                val loginResponse = response.body()!!
+                if (loginResponse.success && loginResponse.token != null && loginResponse.user != null) {
+                    tokenManager.saveAuthData(loginResponse.token, loginResponse.user)
+                }
                 Result.success(loginResponse)
             } else {
                 Result.failure(Exception("Google login failed: ${response.message()}"))
@@ -52,7 +74,6 @@ class Repository @Inject constructor(
         }
     }
 
-    // Authentication methods
     suspend fun signInWithGoogle(): Result<String> {
         return googleAuthService.signIn()
     }
@@ -86,18 +107,7 @@ class Repository @Inject constructor(
         return tokenManager.getUserFlow()
     }
 
-    // Placeholder methods for email/password (implement if needed)
-    suspend fun login(email: String, password: String): Result<LoginResponse> {
-        // TODO: Implement with Supabase email/password auth if needed
-        return Result.failure(Exception("Email/password login not implemented"))
-    }
-
-    suspend fun register(name: String, email: String, password: String): Result<LoginResponse> {
-        // TODO: Implement with Supabase email/password auth if needed
-        return Result.failure(Exception("Email/password registration not implemented"))
-    }
-
-    // Books (simplified for now)
+    // Books
     suspend fun getBooks(
         search: String? = null,
         categoryId: Int? = null,
@@ -106,16 +116,9 @@ class Repository @Inject constructor(
         pageSize: Int = 10
     ): Result<BooksResponse> {
         return try {
-            val response = apiService.getBooks(limit = pageSize, offset = (page - 1) * pageSize)
+            val response = apiService.getBooks(search, categoryId, sortBy, page, pageSize)
             if (response.isSuccessful && response.body() != null) {
-                val books = response.body()!!
-                val booksResponse = BooksResponse(
-                    success = true,
-                    data = books,
-                    pagination = null,
-                    message = "Success"
-                )
-                Result.success(booksResponse)
+                Result.success(response.body()!!)
             } else {
                 Result.failure(Exception("Failed to fetch books: ${response.message()}"))
             }
@@ -126,9 +129,14 @@ class Repository @Inject constructor(
 
     suspend fun getPopularBooks(limit: Int = 10): Result<List<Book>> {
         return try {
-            val response = apiService.getBooks(limit = limit)
+            val response = apiService.getPopularBooks(limit)
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch popular books"))
+                }
             } else {
                 Result.failure(Exception("Failed to fetch popular books"))
             }
@@ -139,9 +147,14 @@ class Repository @Inject constructor(
 
     suspend fun getRecentBooks(limit: Int = 10): Result<List<Book>> {
         return try {
-            val response = apiService.getBooks(limit = limit)
+            val response = apiService.getRecentBooks(limit)
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch recent books"))
+                }
             } else {
                 Result.failure(Exception("Failed to fetch recent books"))
             }
@@ -154,7 +167,12 @@ class Repository @Inject constructor(
         return try {
             val response = apiService.getCategories()
             if (response.isSuccessful && response.body() != null) {
-                Result.success(response.body()!!)
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch categories"))
+                }
             } else {
                 Result.failure(Exception("Failed to fetch categories"))
             }
@@ -163,36 +181,150 @@ class Repository @Inject constructor(
         }
     }
 
-    // Placeholder methods for other features
     suspend fun getBook(id: Int): Result<Book> {
-        return Result.failure(Exception("Get book details not implemented"))
+        return try {
+            val response = apiService.getBook(id)
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch book"))
+                }
+            } else {
+                Result.failure(Exception("Failed to fetch book"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
+    // User
     suspend fun getUserProfile(): Result<UserProfile> {
-        return Result.failure(Exception("User profile not implemented"))
+        return try {
+            val response = apiService.getUserProfile()
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch profile"))
+                }
+            } else {
+                Result.failure(Exception("Failed to fetch profile"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun getReadingActivity(): Result<List<ReadingActivity>> {
-        return Result.failure(Exception("Reading activity not implemented"))
+        return try {
+            val response = apiService.getReadingActivity()
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch reading activity"))
+                }
+            } else {
+                Result.failure(Exception("Failed to fetch reading activity"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
+    // Libraries
     suspend fun getLibraries(): Result<List<Library>> {
-        return Result.failure(Exception("Libraries not implemented"))
+        return try {
+            val response = apiService.getLibraries()
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch libraries"))
+                }
+            } else {
+                Result.failure(Exception("Failed to fetch libraries"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun getLibrary(id: Int): Result<Library> {
-        return Result.failure(Exception("Library details not implemented"))
+        return try {
+            val response = apiService.getLibrary(id)
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to fetch library"))
+                }
+            } else {
+                Result.failure(Exception("Failed to fetch library"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun createLibrary(name: String): Result<Library> {
-        return Result.failure(Exception("Create library not implemented"))
+        return try {
+            val request = CreateLibraryRequest(name)
+            val response = apiService.createLibrary(request)
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success && apiResponse.data != null) {
+                    Result.success(apiResponse.data)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to create library"))
+                }
+            } else {
+                Result.failure(Exception("Failed to create library"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun addBookToLibrary(libraryId: Int, bookId: Int): Result<Unit> {
-        return Result.failure(Exception("Add book to library not implemented"))
+        return try {
+            val response = apiService.addBookToLibrary(libraryId, bookId)
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to add book to library"))
+                }
+            } else {
+                Result.failure(Exception("Failed to add book to library"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 
     suspend fun removeBookFromLibrary(libraryId: Int, bookId: Int): Result<Unit> {
-        return Result.failure(Exception("Remove book from library not implemented"))
+        return try {
+            val response = apiService.removeBookFromLibrary(libraryId, bookId)
+            if (response.isSuccessful && response.body() != null) {
+                val apiResponse = response.body()!!
+                if (apiResponse.success) {
+                    Result.success(Unit)
+                } else {
+                    Result.failure(Exception(apiResponse.message ?: "Failed to remove book from library"))
+                }
+            } else {
+                Result.failure(Exception("Failed to remove book from library"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
     }
 }

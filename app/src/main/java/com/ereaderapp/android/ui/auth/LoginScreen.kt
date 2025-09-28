@@ -205,7 +205,6 @@ fun LoginScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-// Google Sign-In Button (simplified, no icon)
         OutlinedButton(
             onClick = {
                 val signInIntent = viewModel.getGoogleSignInIntent()

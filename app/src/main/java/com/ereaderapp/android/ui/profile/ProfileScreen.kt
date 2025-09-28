@@ -20,8 +20,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
-import com.ereaderapp.android.data.api.ReadingActivity
-import com.ereaderapp.android.data.api.UserStatistics
+import com.ereaderapp.android.data.models.ReadingActivity
+import com.ereaderapp.android.data.models.UserStatistics
 import com.ereaderapp.android.ui.auth.AuthViewModel
 import com.ereaderapp.android.ui.components.LoadingIndicator
 

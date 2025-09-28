@@ -1,4 +1,4 @@
-package com.ereaderapp.android.data.api
+package com.ereaderapp.android.data.models
 
 import android.os.Parcelable
 import com.google.gson.annotations.SerializedName
@@ -25,7 +25,7 @@ data class UserProfile(
     val createdAt: String? = null,
 
     @SerializedName("statistics")
-    val statistics: UserStatistics
+    val statistics: UserStatistics = UserStatistics()
 ) : Parcelable
 
 @Parcelize

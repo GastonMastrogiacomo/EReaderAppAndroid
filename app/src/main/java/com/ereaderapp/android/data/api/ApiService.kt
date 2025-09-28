@@ -6,67 +6,92 @@ import retrofit2.http.*
 
 interface ApiService {
 
-    // CORREGIDO: Endpoints de Supabase Auth reales
-    @POST("auth/v1/token?grant_type=id_token")
+    // Authentication endpoints
+    @POST("api/auth/login")
+    @Headers("Content-Type: application/json")
+    suspend fun login(
+        @Body request: LoginRequest
+    ): Response<LoginResponse>
+
+    @POST("api/auth/register")
+    @Headers("Content-Type: application/json")
+    suspend fun register(
+        @Body request: RegisterRequest
+    ): Response<LoginResponse>
+
+    @POST("api/auth/google")
     @Headers("Content-Type: application/json")
     suspend fun loginWithGoogle(
-        @Body request: SupabaseGoogleLoginRequest
-    ): Response<SupabaseAuthResponse>
+        @Body request: GoogleLoginRequest
+    ): Response<LoginResponse>
 
-    // Endpoints para datos personalizados (si existen en tu backend)
-    @GET("rest/v1/books")
+    @POST("api/auth/validate")
+    @Headers("Content-Type: application/json")
+    suspend fun validateToken(): Response<ApiResponse<User>>
+
+    // Books endpoints
+    @GET("api/books")
     suspend fun getBooks(
-        @Query("select") select: String = "*",
-        @Query("limit") limit: Int = 20,
-        @Query("offset") offset: Int = 0
-    ): Response<List<Book>>
+        @Query("search") search: String? = null,
+        @Query("categoryId") categoryId: Int? = null,
+        @Query("sortBy") sortBy: String? = null,
+        @Query("page") page: Int = 1,
+        @Query("pageSize") pageSize: Int = 20
+    ): Response<BooksResponse>
 
-    @GET("rest/v1/books")
+    @GET("api/books/{id}")
     suspend fun getBook(
-        @Query("id") id: String,
-        @Query("select") select: String = "*"
-    ): Response<List<Book>>
+        @Path("id") id: Int
+    ): Response<ApiResponse<Book>>
 
-    @GET("rest/v1/categories")
-    suspend fun getCategories(
-        @Query("select") select: String = "*"
-    ): Response<List<Category>>
+    @GET("api/books/popular")
+    suspend fun getPopularBooks(
+        @Query("limit") limit: Int = 10
+    ): Response<ApiResponse<List<Book>>>
 
-    // User profile from Supabase Auth
-    @GET("auth/v1/user")
-    suspend fun getCurrentUser(): Response<SupabaseUser>
+    @GET("api/books/recent")
+    suspend fun getRecentBooks(
+        @Query("limit") limit: Int = 10
+    ): Response<ApiResponse<List<Book>>>
+
+    @GET("api/books/categories")
+    suspend fun getCategories(): Response<ApiResponse<List<Category>>>
+
+    // User endpoints
+    @GET("api/user/profile")
+    suspend fun getUserProfile(): Response<ApiResponse<UserProfile>>
+
+    @GET("api/user/reading-activity")
+    suspend fun getReadingActivity(): Response<ApiResponse<List<ReadingActivity>>>
+
+    // Libraries endpoints
+    @GET("api/libraries")
+    suspend fun getLibraries(): Response<ApiResponse<List<Library>>>
+
+    @GET("api/libraries/{id}")
+    suspend fun getLibrary(
+        @Path("id") id: Int
+    ): Response<ApiResponse<Library>>
+
+    @POST("api/libraries")
+    suspend fun createLibrary(
+        @Body request: CreateLibraryRequest
+    ): Response<ApiResponse<Library>>
+
+    @POST("api/libraries/{libraryId}/books/{bookId}")
+    suspend fun addBookToLibrary(
+        @Path("libraryId") libraryId: Int,
+        @Path("bookId") bookId: Int
+    ): Response<ApiResponse<Unit>>
+
+    @DELETE("api/libraries/{libraryId}/books/{bookId}")
+    suspend fun removeBookFromLibrary(
+        @Path("libraryId") libraryId: Int,
+        @Path("bookId") bookId: Int
+    ): Response<ApiResponse<Unit>>
 }
 
-// CORREGIDO: Modelos para Supabase Auth
-data class SupabaseGoogleLoginRequest(
-    val id_token: String,
-    val provider: String = "google"
-)
-
-data class SupabaseAuthResponse(
-    val access_token: String,
-    val token_type: String,
-    val expires_in: Int,
-    val refresh_token: String,
-    val user: SupabaseUser
-)
-
-data class SupabaseUser(
-    val id: String,
-    val email: String,
-    val user_metadata: SupabaseUserMetadata,
-    val created_at: String,
-    val updated_at: String
-)
-
-data class SupabaseUserMetadata(
-    val full_name: String?,
-    val name: String?,
-    val picture: String?,
-    val avatar_url: String?
-)
-
-// Mantener modelos existentes para compatibilidad
+// Request models
 data class LoginRequest(
     val email: String,
     val password: String
@@ -80,4 +105,8 @@ data class RegisterRequest(
 
 data class GoogleLoginRequest(
     val idToken: String
+)
+
+data class CreateLibraryRequest(
+    val name: String
 )
