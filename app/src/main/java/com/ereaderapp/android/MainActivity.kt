@@ -27,8 +27,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Test backend API - REMOVE THIS AFTER DEBUGGING
-        testBackendAPI()
+        //testBackendAPI()
 
         setContent {
             EReaderAppTheme {

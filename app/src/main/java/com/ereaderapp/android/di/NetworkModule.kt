@@ -26,6 +26,9 @@ private val Context.dataStore by preferencesDataStore("app_preferences")
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
+    // SUPABASE CONFIGURATION
+    private const val SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNseGF4eHBjYXlmdWZic2xxZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzAxODgsImV4cCI6MjA2NDkwNjE4OH0.y-0qdnJLa37MawOa8ABDTloNTqUpn66ql-DDzynDj_k"
+
     @Provides
     @Singleton
     fun provideDataStore(@ApplicationContext context: Context) = context.dataStore
@@ -41,27 +44,25 @@ object NetworkModule {
     fun provideSupabaseAuthInterceptor(tokenManager: TokenManager): Interceptor {
         return Interceptor { chain ->
             val token = tokenManager.getToken()
-            val request = chain.request().newBuilder()
+            val requestBuilder = chain.request().newBuilder()
                 .addHeader("Content-Type", "application/json")
                 .addHeader("Accept", "application/json")
-                .addHeader("apikey", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNseGF4eHBjYXlmdWZic2xxZWJuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkzMzAxODgsImV4cCI6MjA2NDkwNjE4OH0.y-0qdnJLa37MawOa8ABDTloNTqUpn66ql-DDzynDj_k")
-                .addHeader("Prefer", "return=representation")
+                .addHeader("apikey", SUPABASE_ANON_KEY)
 
             // Add Authorization header if token exists
             if (token != null) {
                 Log.d("NetworkModule", "Adding Supabase auth token to request")
-                request.addHeader("Authorization", "Bearer $token")
+                requestBuilder.addHeader("Authorization", "Bearer $token")
             } else {
                 Log.d("NetworkModule", "No auth token available")
             }
 
-            val finalRequest = request.build()
+            val finalRequest = requestBuilder.build()
             val response = chain.proceed(finalRequest)
 
             Log.d("NetworkModule", "Response code: ${response.code}")
             if (!response.isSuccessful) {
                 Log.e("NetworkModule", "Request failed: ${response.code} - ${response.message}")
-                // Log response body for debugging
                 val responseBody = response.peekBody(2048).string()
                 Log.e("NetworkModule", "Response body: $responseBody")
             }
@@ -103,7 +104,7 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideGson() = GsonBuilder()
-        .setLenient() // This fixes the JsonReader.SetLenient error
+        .setLenient()
         .serializeNulls()
         .create()
 

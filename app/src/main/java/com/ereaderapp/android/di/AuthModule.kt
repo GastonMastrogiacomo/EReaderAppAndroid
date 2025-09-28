@@ -23,6 +23,7 @@ object AuthModule {
         return GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestIdToken(BuildConfig.GOOGLE_WEB_CLIENT_ID)
             .requestEmail()
+            .requestProfile()
             .build()
     }
 
