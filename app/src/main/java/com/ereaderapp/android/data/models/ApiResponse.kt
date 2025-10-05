@@ -4,7 +4,7 @@ import com.google.gson.annotations.SerializedName
 
 data class ApiResponse<T>(
     @SerializedName("success")
-    val success: Boolean,
+    val success: Boolean = false,
 
     @SerializedName("data")
     val data: T? = null,
@@ -12,13 +12,16 @@ data class ApiResponse<T>(
     @SerializedName("message")
     val message: String? = null,
 
+    @SerializedName("error")
+    val error: String? = null,
+
     @SerializedName("errors")
     val errors: Map<String, List<String>>? = null
 )
 
 data class LoginResponse(
     @SerializedName("success")
-    val success: Boolean,
+    val success: Boolean = false,
 
     @SerializedName("token")
     val token: String? = null,
@@ -30,12 +33,15 @@ data class LoginResponse(
     val expiresIn: Long = 0,
 
     @SerializedName("message")
-    val message: String? = null
+    val message: String? = null,
+
+    @SerializedName("error")
+    val error: String? = null
 )
 
 data class BooksResponse(
     @SerializedName("success")
-    val success: Boolean,
+    val success: Boolean = false,
 
     @SerializedName("data")
     val data: List<Book> = emptyList(),
@@ -44,7 +50,10 @@ data class BooksResponse(
     val pagination: Pagination? = null,
 
     @SerializedName("message")
-    val message: String? = null
+    val message: String? = null,
+
+    @SerializedName("error")
+    val error: String? = null
 )
 
 data class Pagination(

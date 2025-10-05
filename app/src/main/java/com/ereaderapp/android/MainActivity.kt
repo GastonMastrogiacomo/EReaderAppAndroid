@@ -1,5 +1,3 @@
-// Updated MainActivity.kt with fixed backend test
-
 package com.ereaderapp.android
 
 import android.os.Bundle
@@ -11,23 +9,24 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.lifecycleScope
+import com.ereaderapp.android.data.repository.Repository
 import com.ereaderapp.android.navigation.EReaderNavigation
 import com.ereaderapp.android.ui.theme.EReaderAppTheme
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
-import org.json.JSONObject
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var repository: Repository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //testBackendAPI()
+        // Test backend connectivity on app start
+        testBackendIntegration()
 
         setContent {
             EReaderAppTheme {
@@ -41,67 +40,89 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun testBackendAPI() {
+    private fun testBackendIntegration() {
         lifecycleScope.launch {
-            withContext(Dispatchers.IO) { // FIX: Run on background thread
-                try {
-                    val client = OkHttpClient()
+            try {
+                Log.d("MainActivity", "=== Starting Backend Integration Test ===")
 
-                    // Test 1: Check if the backend is accessible
-                    Log.d("BackendTest", "Testing backend connectivity...")
-                    val pingRequest = Request.Builder()
-                        .url("https://librolibredv.onrender.com/")
-                        .build()
-
-                    val pingResponse = client.newCall(pingRequest).execute()
-                    Log.d("BackendTest", "Backend ping response: ${pingResponse.code}")
-
-                    // Test 2: Check registration endpoint
-                    Log.d("BackendTest", "Testing registration endpoint...")
-                    val registerBody = JSONObject().apply {
-                        put("name", "Test User")
-                        put("email", "test@example.com")
-                        put("password", "testpassword123")
-                    }.toString()
-
-                    val registerRequest = Request.Builder()
-                        .url("https://librolibredv.onrender.com/api/auth/register")
-                        .post(registerBody.toRequestBody("application/json".toMediaType()))
-                        .addHeader("Content-Type", "application/json")
-                        .addHeader("Accept", "application/json")
-                        .build()
-
-                    val registerResponse = client.newCall(registerRequest).execute()
-                    Log.d("BackendTest", "Register response code: ${registerResponse.code}")
-                    val registerResponseBody = registerResponse.body?.string()
-                    Log.d("BackendTest", "Register response body: $registerResponseBody")
-
-                    // Test 3: Check available endpoints
-                    val endpoints = listOf(
-                        "/api/auth/login",
-                        "/api/auth/register",
-                        "/api/auth/google",  // This one is missing!
-                        "/api/booksapi",
-                        "/auth/login",      // Alternative endpoints
-                        "/auth/register",
-                        "/auth/google"
-                    )
-
-                    endpoints.forEach { endpoint ->
-                        try {
-                            val testRequest = Request.Builder()
-                                .url("https://librolibredv.onrender.com$endpoint")
-                                .build()
-                            val testResponse = client.newCall(testRequest).execute()
-                            Log.d("BackendTest", "Endpoint $endpoint: ${testResponse.code}")
-                        } catch (e: Exception) {
-                            Log.e("BackendTest", "Error testing $endpoint", e)
-                        }
+                // 1. Test backend connectivity
+                Log.d("MainActivity", "1. Testing backend health...")
+                val healthResult = repository.testBackendConnection()
+                healthResult.fold(
+                    onSuccess = { response ->
+                        Log.d("MainActivity", "✅ Backend health check: $response")
+                    },
+                    onFailure = { error ->
+                        Log.e("MainActivity", "❌ Backend health check failed: ${error.message}")
                     }
+                )
 
-                } catch (e: Exception) {
-                    Log.e("BackendTest", "Backend test failed", e)
-                }
+                // 2. Test categories endpoint
+                Log.d("MainActivity", "2. Testing categories endpoint...")
+                val categoriesResult = repository.getCategories()
+                categoriesResult.fold(
+                    onSuccess = { categories ->
+                        Log.d("MainActivity", "✅ Categories loaded: ${categories.size} categories")
+                        categories.take(3).forEach { category ->
+                            Log.d("MainActivity", "   - ${category.name}")
+                        }
+                    },
+                    onFailure = { error ->
+                        Log.e("MainActivity", "❌ Categories failed: ${error.message}")
+                    }
+                )
+
+                // 3. Test books endpoint
+                Log.d("MainActivity", "3. Testing books endpoint...")
+                val booksResult = repository.getBooks(page = 1, pageSize = 5)
+                booksResult.fold(
+                    onSuccess = { booksResponse ->
+                        Log.d("MainActivity", "✅ Books loaded: ${booksResponse.data.size} books")
+                        Log.d("MainActivity", "   Success: ${booksResponse.success}")
+                        Log.d("MainActivity", "   Pagination: ${booksResponse.pagination?.totalItems} total")
+                        booksResponse.data.take(2).forEach { book ->
+                            Log.d("MainActivity", "   - ${book.title} by ${book.author}")
+                        }
+                    },
+                    onFailure = { error ->
+                        Log.e("MainActivity", "❌ Books failed: ${error.message}")
+                    }
+                )
+
+                // 4. Test popular books
+                Log.d("MainActivity", "4. Testing popular books...")
+                val popularResult = repository.getPopularBooks(limit = 3)
+                popularResult.fold(
+                    onSuccess = { books ->
+                        Log.d("MainActivity", "✅ Popular books loaded: ${books.size} books")
+                        books.forEach { book ->
+                            Log.d("MainActivity", "   - ${book.title} (Rating: ${book.averageRating})")
+                        }
+                    },
+                    onFailure = { error ->
+                        Log.e("MainActivity", "❌ Popular books failed: ${error.message}")
+                    }
+                )
+
+                // 5. Test recent books
+                Log.d("MainActivity", "5. Testing recent books...")
+                val recentResult = repository.getRecentBooks(limit = 3)
+                recentResult.fold(
+                    onSuccess = { books ->
+                        Log.d("MainActivity", "✅ Recent books loaded: ${books.size} books")
+                        books.forEach { book ->
+                            Log.d("MainActivity", "   - ${book.title}")
+                        }
+                    },
+                    onFailure = { error ->
+                        Log.e("MainActivity", "❌ Recent books failed: ${error.message}")
+                    }
+                )
+
+                Log.d("MainActivity", "=== Backend Integration Test Complete ===")
+
+            } catch (e: Exception) {
+                Log.e("MainActivity", "Backend test failed with exception", e)
             }
         }
     }

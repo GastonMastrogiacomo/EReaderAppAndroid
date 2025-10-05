@@ -6,6 +6,10 @@ import retrofit2.http.*
 
 interface ApiService {
 
+    // Health check endpoint
+    @GET("api/debug/test")
+    suspend fun healthCheck(): Response<String>
+
     // Authentication endpoints
     @POST("api/auth/login")
     @Headers("Content-Type: application/json")
@@ -29,7 +33,7 @@ interface ApiService {
     @Headers("Content-Type: application/json")
     suspend fun validateToken(): Response<ApiResponse<User>>
 
-    // Books endpoints
+    // Books endpoints - Updated to match backend structure
     @GET("api/books")
     suspend fun getBooks(
         @Query("search") search: String? = null,

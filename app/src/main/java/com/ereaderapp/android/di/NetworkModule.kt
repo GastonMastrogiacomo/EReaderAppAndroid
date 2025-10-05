@@ -54,6 +54,9 @@ object NetworkModule {
             }
 
             val finalRequest = requestBuilder.build()
+            Log.d("NetworkModule", "Request URL: ${finalRequest.url}")
+            Log.d("NetworkModule", "Request Method: ${finalRequest.method}")
+
             val response = chain.proceed(finalRequest)
 
             Log.d("NetworkModule", "Response code: ${response.code}")
@@ -90,9 +93,9 @@ object NetworkModule {
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(45, TimeUnit.SECONDS) // Increased for Render cold starts
+            .readTimeout(45, TimeUnit.SECONDS)
+            .writeTimeout(45, TimeUnit.SECONDS)
             .retryOnConnectionFailure(true)
             .build()
     }
@@ -102,6 +105,7 @@ object NetworkModule {
     fun provideGson() = GsonBuilder()
         .setLenient()
         .serializeNulls()
+        .setDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'") // Handle backend date format
         .create()
 
     @Provides
