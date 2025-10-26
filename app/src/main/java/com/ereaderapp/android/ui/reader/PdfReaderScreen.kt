@@ -14,6 +14,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,11 +32,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.ereaderapp.android.data.models.Book
+import com.ereaderapp.android.data.models.Bookmark
 import com.ereaderapp.android.ui.theme.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -48,7 +51,8 @@ import kotlin.math.min
 @Composable
 fun PdfReaderScreen(
     book: Book,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: ReaderViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val configuration = LocalConfiguration.current
@@ -62,6 +66,17 @@ fun PdfReaderScreen(
     var zoomLevel by remember { mutableStateOf(1f) }
     var showControls by remember { mutableStateOf(true) }
     var readerMode by remember { mutableStateOf(ReaderMode.LIGHT) }
+    var showBookmarksDrawer by remember { mutableStateOf(false) }
+    var showAddBookmarkDialog by remember { mutableStateOf(false) }
+
+    val bookmarks by viewModel.bookmarks.collectAsState()
+    val isLoadingBookmarks by viewModel.isLoading.collectAsState()
+    val successMessage by viewModel.successMessage.collectAsState()
+
+    // Load bookmarks
+    LaunchedEffect(book.id) {
+        viewModel.loadBookmarks(book.id)
+    }
 
     // Auto-hide controls after 3 seconds
     LaunchedEffect(showControls) {
@@ -124,7 +139,7 @@ fun PdfReaderScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .windowInsetsPadding(WindowInsets.systemBars) // Agregar padding para system bars
+                .windowInsetsPadding(WindowInsets.systemBars)
         ) {
             when {
                 isLoading -> {
@@ -169,7 +184,8 @@ fun PdfReaderScreen(
                             readerMode = readerMode,
                             isLandscape = isLandscape,
                             onBack = onNavigateBack,
-                            onModeChange = { readerMode = it }
+                            onModeChange = { readerMode = it },
+                            onShowBookmarks = { showBookmarksDrawer = true }
                         )
                     }
 
@@ -188,8 +204,66 @@ fun PdfReaderScreen(
                             onPageChange = { currentPage = it.coerceIn(0, pageCount - 1) },
                             onZoomIn = { zoomLevel = min(zoomLevel + 0.2f, 3f) },
                             onZoomOut = { zoomLevel = max(zoomLevel - 0.2f, 0.5f) },
-                            onZoomReset = { zoomLevel = 1f }
+                            onZoomReset = { zoomLevel = 1f },
+                            onAddBookmark = { showAddBookmarkDialog = true }
                         )
+                    }
+
+                    // Bookmarks drawer
+                    if (showBookmarksDrawer) {
+                        BookmarksDrawer(
+                            bookmarks = bookmarks,
+                            isLoading = isLoadingBookmarks,
+                            onDismiss = { showBookmarksDrawer = false },
+                            onBookmarkClick = { bookmark ->
+                                currentPage = bookmark.pageNumber - 1
+                                showBookmarksDrawer = false
+                                showControls = true
+                            },
+                            onDeleteBookmark = { bookmark ->
+                                viewModel.deleteBookmark(bookmark.id)
+                            }
+                        )
+                    }
+
+                    // Add bookmark dialog
+                    if (showAddBookmarkDialog) {
+                        AddBookmarkDialog(
+                            currentPage = currentPage + 1,
+                            onDismiss = { showAddBookmarkDialog = false },
+                            onConfirm = { title ->
+                                viewModel.createBookmark(book.id, currentPage + 1, title)
+                                showAddBookmarkDialog = false
+                            }
+                        )
+                    }
+
+                    // Success message
+                    successMessage?.let { message ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.BottomCenter
+                        ) {
+                            Card(
+                                colors = CardDefaults.cardColors(
+                                    containerColor = AccentGreen
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Text(
+                                    text = message,
+                                    modifier = Modifier.padding(16.dp),
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            }
+                        }
+                        LaunchedEffect(message) {
+                            kotlinx.coroutines.delay(2000)
+                            viewModel.clearSuccessMessage()
+                        }
                     }
                 }
             }
@@ -338,7 +412,8 @@ private fun ReaderTopBar(
     readerMode: ReaderMode,
     isLandscape: Boolean,
     onBack: () -> Unit,
-    onModeChange: (ReaderMode) -> Unit
+    onModeChange: (ReaderMode) -> Unit,
+    onShowBookmarks: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -385,6 +460,15 @@ private fun ReaderTopBar(
             Row(
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
+                // Bookmarks button
+                IconButton(onClick = onShowBookmarks) {
+                    Icon(
+                        imageVector = Icons.Default.Bookmarks,
+                        contentDescription = "Bookmarks",
+                        tint = PrimaryBlue
+                    )
+                }
+
                 // Theme selector
                 ReaderMode.values().forEach { mode ->
                     IconButton(
@@ -425,7 +509,8 @@ private fun ReaderBottomBar(
     onPageChange: (Int) -> Unit,
     onZoomIn: () -> Unit,
     onZoomOut: () -> Unit,
-    onZoomReset: () -> Unit
+    onZoomReset: () -> Unit,
+    onAddBookmark: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -513,6 +598,19 @@ private fun ReaderBottomBar(
                     }
                 }
 
+                // Bookmark button
+                IconButton(
+                    onClick = onAddBookmark,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        Icons.Default.BookmarkAdd,
+                        "Add bookmark",
+                        modifier = Modifier.size(20.dp),
+                        tint = PrimaryBlue
+                    )
+                }
+
                 // Zoom controls
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(2.dp)
@@ -551,6 +649,150 @@ private fun ReaderBottomBar(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun BookmarksDrawer(
+    bookmarks: List<Bookmark>,
+    isLoading: Boolean,
+    onDismiss: () -> Unit,
+    onBookmarkClick: (Bookmark) -> Unit,
+    onDeleteBookmark: (Bookmark) -> Unit
+) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Bookmarks",
+                style = MaterialTheme.typography.titleLarge.copy(
+                    fontWeight = FontWeight.Bold
+                ),
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            when {
+                isLoading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                }
+                bookmarks.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No bookmarks yet",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.heightIn(max = 400.dp)
+                    ) {
+                        items(bookmarks) { bookmark ->
+                            Card(
+                                onClick = { onBookmarkClick(bookmark) },
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = bookmark.title,
+                                            style = MaterialTheme.typography.titleSmall.copy(
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        )
+                                        Text(
+                                            text = "Page ${bookmark.pageNumber}",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = { onDeleteBookmark(bookmark) }
+                                    ) {
+                                        Icon(
+                                            Icons.Default.Delete,
+                                            contentDescription = "Delete",
+                                            tint = AccentRed
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AddBookmarkDialog(
+    currentPage: Int,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit
+) {
+    var title by remember { mutableStateOf("Page $currentPage") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add Bookmark") },
+        text = {
+            Column {
+                Text(
+                    text = "Page $currentPage",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                OutlinedTextField(
+                    value = title,
+                    onValueChange = { title = it },
+                    label = { Text("Bookmark Name") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = { onConfirm(title) },
+                enabled = title.isNotBlank()
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
 }
 
 @Composable

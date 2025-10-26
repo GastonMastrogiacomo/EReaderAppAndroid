@@ -93,6 +93,22 @@ interface ApiService {
         @Path("libraryId") libraryId: Int,
         @Path("bookId") bookId: Int
     ): Response<ApiResponse<Unit>>
+
+    // Bookmarks endpoints
+    @GET("api/reading/bookmarks/{bookId}")
+    suspend fun getBookmarks(
+        @Path("bookId") bookId: Int
+    ): Response<ApiResponse<List<Bookmark>>>
+
+    @POST("api/reading/bookmarks")
+    suspend fun createBookmark(
+        @Body request: CreateBookmarkRequest
+    ): Response<ApiResponse<Bookmark>>
+
+    @DELETE("api/reading/bookmarks/{id}")
+    suspend fun deleteBookmark(
+        @Path("id") id: Int
+    ): Response<ApiResponse<Unit>>
 }
 
 // Request models

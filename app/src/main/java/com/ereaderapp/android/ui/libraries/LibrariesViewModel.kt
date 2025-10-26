@@ -25,22 +25,32 @@ class LibrariesViewModel @Inject constructor(
     private val _actionSuccess = MutableStateFlow<String?>(null)
     val actionSuccess: StateFlow<String?> = _actionSuccess.asStateFlow()
 
+    private val _shouldRefresh = MutableStateFlow(false)
+    val shouldRefresh: StateFlow<Boolean> = _shouldRefresh.asStateFlow()
+
     init {
         loadLibraries()
     }
 
-    fun loadLibraries() {
+    fun loadLibraries(forceRefresh: Boolean = false) {
         executeWithLoading {
             val result = repository.getLibraries()
             result.fold(
                 onSuccess = { libraries ->
                     _libraries.value = libraries
+                    if (forceRefresh) {
+                        _shouldRefresh.value = false
+                    }
                 },
                 onFailure = { exception ->
                     setError(exception.message ?: "Failed to load libraries")
                 }
             )
         }
+    }
+
+    fun markForRefresh() {
+        _shouldRefresh.value = true
     }
 
     fun getLibraryDetails(libraryId: Int) {
@@ -63,7 +73,8 @@ class LibrariesViewModel @Inject constructor(
             result.fold(
                 onSuccess = { library ->
                     _libraries.value = _libraries.value + library
-                    _actionSuccess.value = "Library created successfully"
+                    _actionSuccess.value = "Library '${library.name}' created successfully!"
+                    markForRefresh()
                 },
                 onFailure = { exception ->
                     setError(exception.message ?: "Failed to create library")
@@ -79,13 +90,14 @@ class LibrariesViewModel @Inject constructor(
                 val result = repository.addBookToLibrary(libraryId, bookId)
                 result.fold(
                     onSuccess = {
-                        _actionSuccess.value = "Book added to library"
+                        _actionSuccess.value = "Book added to library successfully!"
                         // Refresh the specific library if it's currently selected
                         if (_selectedLibrary.value?.id == libraryId) {
                             getLibraryDetails(libraryId)
                         }
-                        // Refresh all libraries to update book counts
-                        loadLibraries()
+                        // Mark for refresh to update book counts
+                        markForRefresh()
+                        loadLibraries(forceRefresh = true)
                     },
                     onFailure = { exception ->
                         setError(exception.message ?: "Failed to add book to library")
@@ -106,13 +118,14 @@ class LibrariesViewModel @Inject constructor(
                 val result = repository.removeBookFromLibrary(libraryId, bookId)
                 result.fold(
                     onSuccess = {
-                        _actionSuccess.value = "Book removed from library"
+                        _actionSuccess.value = "Book removed from library successfully!"
                         // Refresh the specific library if it's currently selected
                         if (_selectedLibrary.value?.id == libraryId) {
                             getLibraryDetails(libraryId)
                         }
-                        // Refresh all libraries to update book counts
-                        loadLibraries()
+                        // Mark for refresh to update book counts
+                        markForRefresh()
+                        loadLibraries(forceRefresh = true)
                     },
                     onFailure = { exception ->
                         setError(exception.message ?: "Failed to remove book from library")

@@ -17,6 +17,7 @@ import com.ereaderapp.android.data.models.Library
 import com.ereaderapp.android.ui.components.EmptyState
 import com.ereaderapp.android.ui.components.ErrorMessage
 import com.ereaderapp.android.ui.components.LoadingIndicator
+import com.ereaderapp.android.ui.components.SuccessSnackbar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -28,103 +29,138 @@ fun LibrariesScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val actionSuccess by viewModel.actionSuccess.collectAsState()
+    val shouldRefresh by viewModel.shouldRefresh.collectAsState()
 
     var showCreateDialog by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf<String?>(null) }
+
+    // Auto-refresh when marked for refresh
+    LaunchedEffect(shouldRefresh) {
+        if (shouldRefresh) {
+            viewModel.loadLibraries(forceRefresh = true)
+        }
+    }
 
     // Handle success messages
     LaunchedEffect(actionSuccess) {
         actionSuccess?.let {
-            // Show success message
+            showSuccessMessage = it
+            // Auto-dismiss after showing
+            kotlinx.coroutines.delay(100)
             viewModel.clearActionSuccess()
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top Bar
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            shadowElevation = 4.dp
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            // Top Bar
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 4.dp
             ) {
-                Text(
-                    text = "My Libraries",
-                    style = MaterialTheme.typography.headlineMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-
-                FloatingActionButton(
-                    onClick = { showCreateDialog = true },
-                    modifier = Modifier.size(48.dp)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = "Create Library"
-                    )
+                    Column {
+                        Text(
+                            text = "My Libraries",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            )
+                        )
+                        Text(
+                            text = "${libraries.size} ${if (libraries.size == 1) "library" else "libraries"}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    FloatingActionButton(
+                        onClick = { showCreateDialog = true },
+                        modifier = Modifier.size(48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Create Library"
+                        )
+                    }
+                }
+            }
+
+            // Content
+            Box(
+                modifier = Modifier.fillMaxSize()
+            ) {
+                val currentError = error
+                when {
+                    currentError != null -> {
+                        ErrorMessage(
+                            message = currentError,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            onRetry = { viewModel.loadLibraries() }
+                        )
+                    }
+                    isLoading && libraries.isEmpty() -> {
+                        LoadingIndicator(
+                            modifier = Modifier.fillMaxSize(),
+                            message = "Loading libraries..."
+                        )
+                    }
+                    libraries.isEmpty() -> {
+                        EmptyState(
+                            title = "No libraries yet",
+                            subtitle = "Create your first library to organize your books",
+                            modifier = Modifier.fillMaxSize(),
+                            action = {
+                                Button(onClick = { showCreateDialog = true }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Add,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text("Create Library")
+                                }
+                            }
+                        )
+                    }
+                    else -> {
+                        LazyColumn(
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            items(libraries) { library ->
+                                LibraryCard(
+                                    library = library,
+                                    onClick = { onLibraryClick(library) }
+                                )
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        // Content
-        Box(
-            modifier = Modifier.fillMaxSize()
-        ) {
-            val currentError = error
-            when {
-                currentError != null -> {
-                    ErrorMessage(
-                        message = currentError,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        onRetry = { viewModel.loadLibraries() }
-                    )
-                }
-                isLoading && libraries.isEmpty() -> {
-                    LoadingIndicator(
-                        modifier = Modifier.fillMaxSize(),
-                        message = "Loading libraries..."
-                    )
-                }
-                libraries.isEmpty() -> {
-                    EmptyState(
-                        title = "No libraries yet",
-                        subtitle = "Create your first library to organize your books",
-                        modifier = Modifier.fillMaxSize(),
-                        action = {
-                            Button(onClick = { showCreateDialog = true }) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Create Library")
-                            }
-                        }
-                    )
-                }
-                else -> {
-                    LazyColumn(
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        items(libraries) { library ->
-                            LibraryCard(
-                                library = library,
-                                onClick = { onLibraryClick(library) }
-                            )
-                        }
-                    }
-                }
+        // Success message overlay
+        showSuccessMessage?.let { message ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                SuccessSnackbar(
+                    message = message,
+                    onDismiss = { showSuccessMessage = null }
+                )
             }
         }
     }
@@ -205,6 +241,7 @@ private fun CreateLibraryDialog(
     onCreateLibrary: (String) -> Unit
 ) {
     var libraryName by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -221,22 +258,29 @@ private fun CreateLibraryDialog(
 
                 OutlinedTextField(
                     value = libraryName,
-                    onValueChange = { libraryName = it },
+                    onValueChange = {
+                        libraryName = it
+                        error = null
+                    },
                     label = { Text("Library Name") },
                     placeholder = { Text("e.g., Favorites, To Read, Fiction") },
                     singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    isError = error != null,
+                    supportingText = error?.let { { Text(it) } }
                 )
             }
         },
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (libraryName.isNotBlank()) {
-                        onCreateLibrary(libraryName.trim())
+                    when {
+                        libraryName.isBlank() -> error = "Name cannot be empty"
+                        libraryName.length < 2 -> error = "Name must be at least 2 characters"
+                        libraryName.length > 50 -> error = "Name must be less than 50 characters"
+                        else -> onCreateLibrary(libraryName.trim())
                     }
-                },
-                enabled = libraryName.isNotBlank()
+                }
             ) {
                 Text("Create")
             }

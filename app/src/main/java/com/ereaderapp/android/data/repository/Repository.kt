@@ -279,4 +279,41 @@ class Repository @Inject constructor(
             }
         }
     }
+
+    // Bookmarks
+    suspend fun getBookmarks(bookId: Int): Result<List<Bookmark>> {
+        return handleApiResponse(
+            call = { apiService.getBookmarks(bookId) },
+            errorMessage = "Failed to fetch bookmarks"
+        ).mapCatching { response ->
+            when {
+                response.success && response.data != null -> response.data
+                else -> throw Exception(response.message ?: "Failed to fetch bookmarks")
+            }
+        }
+    }
+
+    suspend fun createBookmark(bookId: Int, pageNumber: Int, title: String): Result<Bookmark> {
+        return handleApiResponse(
+            call = { apiService.createBookmark(CreateBookmarkRequest(bookId, pageNumber, title)) },
+            errorMessage = "Failed to create bookmark"
+        ).mapCatching { response ->
+            when {
+                response.success && response.data != null -> response.data
+                else -> throw Exception(response.message ?: "Failed to create bookmark")
+            }
+        }
+    }
+
+    suspend fun deleteBookmark(bookmarkId: Int): Result<Unit> {
+        return handleApiResponse(
+            call = { apiService.deleteBookmark(bookmarkId) },
+            errorMessage = "Failed to delete bookmark"
+        ).mapCatching { response ->
+            when {
+                response.success -> Unit
+                else -> throw Exception(response.message ?: "Failed to delete bookmark")
+            }
+        }
+    }
 }
