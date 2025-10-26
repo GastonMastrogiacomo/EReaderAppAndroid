@@ -25,6 +25,7 @@ import com.ereaderapp.android.ui.books.BooksScreen
 import com.ereaderapp.android.ui.home.HomeScreen
 import com.ereaderapp.android.ui.libraries.LibrariesScreen
 import com.ereaderapp.android.ui.libraries.LibraryDetailsScreen
+import com.ereaderapp.android.ui.libraries.LibrariesViewModel
 import com.ereaderapp.android.ui.profile.ProfileScreen
 import com.ereaderapp.android.ui.reader.PdfReaderScreen
 
@@ -77,14 +78,26 @@ fun EReaderNavigation() {
 @Composable
 private fun MainAppNavigation() {
     val navController = rememberNavController()
+    // Get a single instance of LibrariesViewModel for the entire navigation graph
+    val librariesViewModel: LibrariesViewModel = hiltViewModel()
 
     // Track the selected book and library for navigation
     var selectedBook by remember { mutableStateOf<Book?>(null) }
     var selectedLibrary by remember { mutableStateOf<com.ereaderapp.android.data.models.Library?>(null) }
 
+    // Track when we return to Libraries tab to trigger refresh
+    val navBackStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = navBackStackEntry?.destination?.route
+
+    // Trigger refresh when navigating to libraries tab
+    LaunchedEffect(currentRoute) {
+        if (currentRoute == Screen.Libraries.route) {
+            librariesViewModel.markForRefresh()
+        }
+    }
+
     Scaffold(
         bottomBar = {
-            val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentDestination = navBackStackEntry?.destination
 
             // Only show bottom bar on main screens
@@ -134,11 +147,13 @@ private fun MainAppNavigation() {
             }
 
             composable(Screen.Libraries.route) {
+                // Pass the shared viewModel to ensure data consistency
                 LibrariesScreen(
                     onLibraryClick = { library ->
                         selectedLibrary = library
                         navController.navigate(Screen.LibraryDetails.route)
-                    }
+                    },
+                    viewModel = librariesViewModel
                 )
             }
 
@@ -163,7 +178,9 @@ private fun MainAppNavigation() {
                         onReadBook = { bookToRead ->
                             selectedBook = bookToRead
                             navController.navigate(Screen.PdfReader.route)
-                        }
+                        },
+                        // Pass the shared librariesViewModel
+                        librariesViewModel = librariesViewModel
                     )
                 }
             }
@@ -173,12 +190,16 @@ private fun MainAppNavigation() {
                     LibraryDetailsScreen(
                         library = library,
                         onNavigateBack = {
+                            // Mark for refresh when going back to libraries list
+                            librariesViewModel.markForRefresh()
                             navController.popBackStack()
                         },
                         onBookClick = { book ->
                             selectedBook = book
                             navController.navigate(Screen.BookDetails.route)
-                        }
+                        },
+                        // Pass the shared librariesViewModel
+                        viewModel = librariesViewModel
                     )
                 }
             }

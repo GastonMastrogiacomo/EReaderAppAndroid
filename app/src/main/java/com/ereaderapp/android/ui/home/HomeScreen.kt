@@ -11,7 +11,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.TrendingUp
 import androidx.compose.material.icons.filled.FiberNew
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.MenuBook
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -51,13 +51,13 @@ fun HomeScreen(
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         item {
-            // Hero section
+            // Simplified Hero section
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(animationSpec = tween(600)) +
                         slideInVertically(animationSpec = tween(600))
             ) {
-                HeroSection()
+                SimplifiedHeroSection()
             }
         }
 
@@ -98,22 +98,11 @@ fun HomeScreen(
                 )
             }
         }
-
-        // Reading Stats (if we have them in the future)
-        item {
-            AnimatedVisibility(
-                visible = visible,
-                enter = fadeIn(animationSpec = tween(600, delayMillis = 600)) +
-                        slideInVertically(animationSpec = tween(600, delayMillis = 600))
-            ) {
-                QuickStats()
-            }
-        }
     }
 }
 
 @Composable
-private fun HeroSection() {
+private fun SimplifiedHeroSection() {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -132,70 +121,85 @@ private fun HeroSection() {
                         )
                     )
                 )
-                .padding(24.dp)
         ) {
             Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(28.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                // App Icon and Name
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Star,
-                        contentDescription = null,
-                        tint = StarGold,
-                        modifier = Modifier.size(32.dp)
-                    )
-                    Text(
-                        text = "LibroLibre",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.ExtraBold
-                        ),
-                        color = Color.White
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = Color.White.copy(alpha = 0.2f),
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Box(
+                            contentAlignment = Alignment.Center,
+                            modifier = Modifier.fillMaxSize()
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MenuBook,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                    }
+
+                    Column {
+                        Text(
+                            text = "LibroLibre",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.ExtraBold
+                            ),
+                            color = Color.White
+                        )
+                        Text(
+                            text = "Your Digital Library",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = Color.White.copy(alpha = 0.9f)
+                        )
+                    }
                 }
 
+                // Simple tagline
                 Text(
-                    text = "Your digital library awaits",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.White.copy(alpha = 0.95f)
+                    text = "Discover thousands of books, create your personal libraries, and read anywhere, anytime.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = Color.White.copy(alpha = 0.95f),
+                    lineHeight = MaterialTheme.typography.bodyLarge.lineHeight * 1.4f
                 )
-
-                Text(
-                    text = "Discover, read, and organize your favorite books all in one place",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White.copy(alpha = 0.85f),
-                    lineHeight = MaterialTheme.typography.bodyMedium.lineHeight * 1.3f
-                )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    FeaturePill(text = "📚 Unlimited Books")
-                    FeaturePill(text = "🔖 Smart Bookmarks")
-                    FeaturePill(text = "📱 Read Anywhere")
-                }
             }
         }
     }
 }
 
 @Composable
-private fun FeaturePill(text: String) {
+private fun FeatureBadge(icon: String, text: String) {
     Surface(
         color = Color.White.copy(alpha = 0.2f),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Text(
-            text = text,
-            style = MaterialTheme.typography.labelSmall,
-            color = Color.White,
-            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-        )
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = icon,
+                style = MaterialTheme.typography.labelMedium
+            )
+            Text(
+                text = text,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Medium
+                ),
+                color = Color.White
+            )
+        }
     }
 }
 
@@ -359,96 +363,6 @@ private fun BookCardPlaceholder() {
                 .width(100.dp)
                 .height(16.dp)
                 .clip(RoundedCornerShape(4.dp))
-        )
-    }
-}
-
-@Composable
-private fun QuickStats() {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Star,
-                    contentDescription = null,
-                    tint = PrimaryBlue,
-                    modifier = Modifier.size(24.dp)
-                )
-                Text(
-                    text = "Your Reading Journey",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    )
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
-            ) {
-                StatItem(
-                    label = "Books",
-                    value = "∞",
-                    color = PrimaryBlue
-                )
-                StatItem(
-                    label = "Categories",
-                    value = "20+",
-                    color = AccentGreen
-                )
-                StatItem(
-                    label = "Authors",
-                    value = "100+",
-                    color = AccentOrange
-                )
-            }
-
-            Text(
-                text = "Start exploring and build your personal library today!",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
-    }
-}
-
-@Composable
-private fun StatItem(
-    label: String,
-    value: String,
-    color: Color
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp)
-    ) {
-        Text(
-            text = value,
-            style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.ExtraBold
-            ),
-            color = color
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
         )
     }
 }

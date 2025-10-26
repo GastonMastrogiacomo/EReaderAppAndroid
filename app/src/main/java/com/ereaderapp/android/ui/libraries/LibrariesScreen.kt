@@ -34,6 +34,12 @@ fun LibrariesScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf<String?>(null) }
 
+    // KEY FIX: Always refresh when this screen is opened/resumed
+    // This ensures data is always in sync with the backend
+    LaunchedEffect(Unit) {
+        viewModel.loadLibraries(forceRefresh = true)
+    }
+
     // Auto-refresh when marked for refresh
     LaunchedEffect(shouldRefresh) {
         if (shouldRefresh) {
@@ -105,7 +111,7 @@ fun LibrariesScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(16.dp),
-                            onRetry = { viewModel.loadLibraries() }
+                            onRetry = { viewModel.loadLibraries(forceRefresh = true) }
                         )
                     }
                     isLoading && libraries.isEmpty() -> {
@@ -137,7 +143,7 @@ fun LibrariesScreen(
                             contentPadding = PaddingValues(16.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
-                            items(libraries) { library ->
+                            items(libraries, key = { it.id }) { library ->
                                 LibraryCard(
                                     library = library,
                                     onClick = { onLibraryClick(library) }

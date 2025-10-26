@@ -120,7 +120,8 @@ fun ProfileScreen(
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedButton(
+                       /*
+                       OutlinedButton(
                             onClick = onEditProfile,
                             modifier = Modifier.weight(1f)
                         ) {
@@ -133,6 +134,7 @@ fun ProfileScreen(
                             Text("Edit Profile")
                         }
 
+                        */
                         OutlinedButton(
                             onClick = { showLogoutDialog = true },
                             colors = ButtonDefaults.outlinedButtonColors(

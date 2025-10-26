@@ -30,7 +30,9 @@ import com.ereaderapp.android.data.models.Library
 import com.ereaderapp.android.ui.components.BookRating
 import com.ereaderapp.android.ui.components.ErrorMessage
 import com.ereaderapp.android.ui.components.LoadingIndicator
+import com.ereaderapp.android.ui.components.SuccessSnackbar
 import com.ereaderapp.android.ui.libraries.LibrariesViewModel
+import com.ereaderapp.android.ui.theme.AccentRed
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -48,92 +50,154 @@ fun BookDetailsScreen(
     val libraries by librariesViewModel.libraries.collectAsState()
     val librariesLoading by librariesViewModel.isLoading.collectAsState()
     val actionSuccess by librariesViewModel.actionSuccess.collectAsState()
+    val librariesError by librariesViewModel.error.collectAsState()
 
     var showAddToLibraryDialog by remember { mutableStateOf(false) }
     var showCreateLibraryDialog by remember { mutableStateOf(false) }
+    var showSuccessMessage by remember { mutableStateOf<String?>(null) }
+    var showErrorMessage by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(book.id) {
         booksViewModel.getBookDetails(book.id)
+        librariesViewModel.loadLibraries()
     }
 
     // Handle success messages
     LaunchedEffect(actionSuccess) {
         actionSuccess?.let {
-            // Show success message (you can use a SnackBar here)
+            showSuccessMessage = it
+            kotlinx.coroutines.delay(100)
             librariesViewModel.clearActionSuccess()
         }
     }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
-    ) {
-        // Top App Bar
-        TopAppBar(
-            title = { Text("Book Details") },
-            navigationIcon = {
-                IconButton(onClick = onNavigateBack) {
-                    Icon(
-                        imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back"
+    // Handle error messages
+    LaunchedEffect(librariesError) {
+        librariesError?.let {
+            showErrorMessage = it
+            kotlinx.coroutines.delay(100)
+            librariesViewModel.clearError()
+        }
+    }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Top App Bar
+            TopAppBar(
+                title = { Text("Book Details") },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateBack) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
+            )
+
+            // Content
+            val currentError = error
+            when {
+                currentError != null -> {
+                    ErrorMessage(
+                        message = currentError,
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(16.dp),
+                        onRetry = { booksViewModel.getBookDetails(book.id) }
+                    )
+                }
+                isLoading -> {
+                    LoadingIndicator(
+                        modifier = Modifier.fillMaxSize(),
+                        message = "Loading book details..."
+                    )
+                }
+                else -> {
+                    val bookDetails = selectedBook ?: book
+
+                    LazyColumn(
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            BookHeader(
+                                book = bookDetails,
+                                onReadBook = onReadBook,
+                                onAddToLibrary = { showAddToLibraryDialog = true }
+                            )
+                        }
+
+                        item {
+                            BookInfo(book = bookDetails)
+                        }
+
+                        bookDetails.description?.let { description ->
+                            if (description.isNotEmpty()) {
+                                item {
+                                    BookDescription(description = description)
+                                }
+                            }
+                        }
+
+                        bookDetails.authorBio?.let { authorBio ->
+                            if (authorBio.isNotEmpty()) {
+                                item {
+                                    AuthorBio(authorBio = authorBio)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Success message overlay
+        showSuccessMessage?.let { message ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                SuccessSnackbar(
+                    message = message,
+                    onDismiss = { showSuccessMessage = null }
+                )
+            }
+        }
+
+        // Error message overlay
+        showErrorMessage?.let { message ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                contentAlignment = Alignment.BottomCenter
+            ) {
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = AccentRed
+                    ),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
+                ) {
+                    Text(
+                        text = message,
+                        color = Color.White,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
             }
-        )
-
-        // Content
-        val currentError = error
-        when {
-            currentError != null -> {
-                ErrorMessage(
-                    message = currentError,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
-                    onRetry = { booksViewModel.getBookDetails(book.id) }
-                )
-            }
-            isLoading -> {
-                LoadingIndicator(
-                    modifier = Modifier.fillMaxSize(),
-                    message = "Loading book details..."
-                )
-            }
-            else -> {
-                val bookDetails = selectedBook ?: book
-
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    item {
-                        BookHeader(
-                            book = bookDetails,
-                            onReadBook = onReadBook,
-                            onAddToLibrary = { showAddToLibraryDialog = true }
-                        )
-                    }
-
-                    item {
-                        BookInfo(book = bookDetails)
-                    }
-
-                    bookDetails.description?.let { description ->
-                        if (description.isNotEmpty()) {
-                            item {
-                                BookDescription(description = description)
-                            }
-                        }
-                    }
-
-                    bookDetails.authorBio?.let { authorBio ->
-                        if (authorBio.isNotEmpty()) {
-                            item {
-                                AuthorBio(authorBio = authorBio)
-                            }
-                        }
-                    }
-                }
+            LaunchedEffect(message) {
+                kotlinx.coroutines.delay(3000)
+                showErrorMessage = null
             }
         }
     }
@@ -141,6 +205,7 @@ fun BookDetailsScreen(
     // Add to Library Dialog
     if (showAddToLibraryDialog) {
         AddToLibraryDialog(
+            book = book,
             libraries = libraries,
             isLoading = librariesLoading,
             onDismiss = { showAddToLibraryDialog = false },
@@ -378,6 +443,7 @@ private fun AuthorBio(authorBio: String) {
 
 @Composable
 private fun AddToLibraryDialog(
+    book: Book,
     libraries: List<Library>,
     isLoading: Boolean,
     onDismiss: () -> Unit,
@@ -399,16 +465,34 @@ private fun AddToLibraryDialog(
             } else {
                 LazyColumn {
                     items(libraries) { library ->
+                        val bookAlreadyInLibrary = library.books.any { it.id == book.id }
+
                         TextButton(
                             onClick = { onAddToLibrary(library.id) },
-                            modifier = Modifier.fillMaxWidth()
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !bookAlreadyInLibrary
                         ) {
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(library.name)
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = library.name,
+                                        color = if (bookAlreadyInLibrary)
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        else
+                                            MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (bookAlreadyInLibrary) {
+                                        Text(
+                                            text = "Already added",
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                                        )
+                                    }
+                                }
                                 Text(
                                     text = "${library.bookCount} books",
                                     style = MaterialTheme.typography.bodySmall,
