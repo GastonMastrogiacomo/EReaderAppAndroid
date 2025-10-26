@@ -77,7 +77,7 @@ fun LoginScreen(
     ) {
         // App Title
         Text(
-            text = "EReader",
+            text = " LibroLibre",
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontWeight = FontWeight.Bold
             ),
