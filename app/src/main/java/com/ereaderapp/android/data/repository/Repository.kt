@@ -31,29 +31,98 @@ class Repository @Inject constructor(
                 Result.success(response.body()!!)
             } else {
                 val errorBody = response.errorBody()?.string()
-                val finalErrorMessage = when {
-                    response.code() == 401 -> "Authentication failed. Please login again."
-                    response.code() == 403 -> "Access forbidden. Check your permissions."
-                    response.code() == 404 -> "Resource not found. Please check your request."
-                    response.code() == 500 -> "Server error. Please try again later."
-                    errorBody != null -> errorBody
-                    else -> "$errorMessage: ${response.message()}"
-                }
+                val finalErrorMessage = parseErrorMessage(response.code(), errorBody, errorMessage)
                 Log.e("Repository", "API Error: $finalErrorMessage")
                 Result.failure(Exception(finalErrorMessage))
             }
         } catch (e: Exception) {
             Log.e("Repository", "Network Error: ${e.message}", e)
             val finalErrorMessage = when {
-                e.message?.contains("timeout") == true -> "Connection timeout. Please check your internet connection."
-                e.message?.contains("ConnectException") == true -> "Cannot connect to server. Please try again."
+                e.message?.contains("timeout", ignoreCase = true) == true ->
+                    "Connection timeout. Please check your internet connection."
+                e.message?.contains("ConnectException", ignoreCase = true) == true ->
+                    "Cannot connect to server. Please try again."
+                e.message?.contains("UnknownHostException", ignoreCase = true) == true ->
+                    "No internet connection. Please check your network."
                 else -> e.message ?: errorMessage
             }
             Result.failure(Exception(finalErrorMessage))
         }
     }
 
-    // Test backend connectivity
+    private fun parseErrorMessage(code: Int, errorBody: String?, defaultMessage: String): String {
+        val cleanError = cleanErrorBody(errorBody)
+
+        return when (code) {
+            400 -> {
+                when {
+                    cleanError?.contains("email", ignoreCase = true) == true &&
+                            cleanError.contains("already exists", ignoreCase = true) ->
+                        "This email is already registered. Please login or use a different email."
+                    cleanError?.contains("invalid", ignoreCase = true) == true ->
+                        "Invalid input. Please check your information."
+                    cleanError?.contains("password", ignoreCase = true) == true ->
+                        "Password does not meet requirements. Please use at least 8 characters."
+                    else -> cleanError ?: "Invalid request. Please check your information."
+                }
+            }
+            401 -> {
+                when {
+                    cleanError?.contains("credentials", ignoreCase = true) == true ||
+                            cleanError?.contains("password", ignoreCase = true) == true ->
+                        "Incorrect email or password. Please try again."
+                    cleanError?.contains("token", ignoreCase = true) == true ->
+                        "Session expired. Please login again."
+                    else -> "Authentication failed. Please login again."
+                }
+            }
+            403 -> "Access denied. You don't have permission to perform this action."
+            404 -> "Resource not found. Please try again."
+            409 -> cleanError ?: "This email is already registered. Please login instead."
+            422 -> {
+                when {
+                    cleanError?.contains("email", ignoreCase = true) == true ->
+                        "Invalid email format. Please enter a valid email address."
+                    cleanError?.contains("password", ignoreCase = true) == true ->
+                        "Password is too weak. Please use at least 8 characters."
+                    else -> cleanError ?: "Invalid data provided. Please check your input."
+                }
+            }
+            500, 502, 503 -> "Server error. Please try again later."
+            else -> cleanError ?: "$defaultMessage (Error $code)"
+        }
+    }
+
+    private fun cleanErrorBody(errorBody: String?): String? {
+        if (errorBody.isNullOrEmpty()) return null
+
+        return try {
+            val jsonRegex = """"(error|message)"\s*:\s*"([^"]*)"""".toRegex()
+            val match = jsonRegex.find(errorBody)
+
+            if (match != null) {
+                // Found JSON with error/message field
+                match.groupValues[2]
+            } else {
+                // Remove common JSON artifacts
+                errorBody
+                    .replace(""""success"\s*:\s*false\s*,?\s*""".toRegex(), "")
+                    .replace(""""success"\s*:\s*true\s*,?\s*""".toRegex(), "")
+                    .replace(""""error"\s*:\s*""".toRegex(), "")
+                    .replace(""""message"\s*:\s*""".toRegex(), "")
+                    .replace("""[{}\[\]"]""".toRegex(), "")
+                    .replace(",", "")
+                    .trim()
+                    .takeIf { it.isNotEmpty() }
+            }
+        } catch (e: Exception) {
+            // If cleaning fails, return original with basic cleanup
+            errorBody.replace(""""success":false,""", "")
+                .replace(""""success": false,""", "")
+                .trim()
+        }
+    }
+
     suspend fun testBackendConnection(): Result<String> {
         return handleApiResponse(
             call = { apiService.healthCheck() },
@@ -61,7 +130,6 @@ class Repository @Inject constructor(
         )
     }
 
-    // Authentication methods
     suspend fun login(email: String, password: String): Result<LoginResponse> {
         return handleApiResponse(
             call = { apiService.login(LoginRequest(email, password)) },
@@ -132,7 +200,6 @@ class Repository @Inject constructor(
         return tokenManager.getUserFlow()
     }
 
-    // Books - Enhanced with better error handling
     suspend fun getBooks(
         search: String? = null,
         categoryId: Int? = null,
