@@ -146,4 +146,29 @@ class LibrariesViewModel @Inject constructor(
     fun clearActionSuccess() {
         _actionSuccess.value = null
     }
+
+    fun deleteLibrary(libraryId: Int) {
+        viewModelScope.launch {
+            try {
+                setLoading(true)
+                val result = repository.deleteLibrary(libraryId)
+                result.fold(
+                    onSuccess = {
+                        // Remove from local list
+                        _libraries.value = _libraries.value.filter { it.id != libraryId }
+                        _actionSuccess.value = "Library deleted successfully!"
+                        markForRefresh()
+                    },
+                    onFailure = { exception ->
+                        setError(exception.message ?: "Failed to delete library")
+                    }
+                )
+            } catch (e: Exception) {
+                setError(e.message ?: "Failed to delete library")
+            } finally {
+                setLoading(false)
+            }
+        }
+    }
+
 }

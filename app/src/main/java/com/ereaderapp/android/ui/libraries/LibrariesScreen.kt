@@ -18,6 +18,9 @@ import com.ereaderapp.android.ui.components.EmptyState
 import com.ereaderapp.android.ui.components.ErrorMessage
 import com.ereaderapp.android.ui.components.LoadingIndicator
 import com.ereaderapp.android.ui.components.SuccessSnackbar
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.draw.clip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

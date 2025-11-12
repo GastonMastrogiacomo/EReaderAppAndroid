@@ -435,7 +435,8 @@ private fun ReaderTopBar(
                 IconButton(onClick = onBack) {
                     Icon(
                         imageVector = Icons.Default.ArrowBack,
-                        contentDescription = "Back"
+                        contentDescription = "Back",
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
 
@@ -446,12 +447,13 @@ private fun ReaderTopBar(
                             style = MaterialTheme.typography.titleSmall.copy(
                                 fontWeight = FontWeight.Bold
                             ),
-                            maxLines = 1
+                            maxLines = 1,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
                             text = "Page ${currentPage + 1} of $pageCount",
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -465,7 +467,7 @@ private fun ReaderTopBar(
                     Icon(
                         imageVector = Icons.Default.Bookmarks,
                         contentDescription = "Bookmarks",
-                        tint = PrimaryBlue
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -478,7 +480,7 @@ private fun ReaderTopBar(
                             .clip(CircleShape)
                             .background(
                                 if (readerMode == mode)
-                                    PrimaryBlue.copy(alpha = 0.2f)
+                                    MaterialTheme.colorScheme.primaryContainer
                                 else
                                     Color.Transparent
                             )
@@ -490,7 +492,10 @@ private fun ReaderTopBar(
                                 ReaderMode.NIGHT -> Icons.Default.DarkMode
                             },
                             contentDescription = mode.name,
-                            tint = if (readerMode == mode) PrimaryBlue else MaterialTheme.colorScheme.onSurface,
+                            tint = if (readerMode == mode)
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurface,
                             modifier = Modifier.size(20.dp)
                         )
                     }
@@ -524,7 +529,7 @@ private fun ReaderBottomBar(
             LinearProgressIndicator(
                 progress = (currentPage + 1).toFloat() / pageCount.toFloat(),
                 modifier = Modifier.fillMaxWidth(),
-                color = PrimaryBlue,
+                color = MaterialTheme.colorScheme.primary,
                 trackColor = MaterialTheme.colorScheme.surfaceVariant
             )
 
@@ -547,7 +552,11 @@ private fun ReaderBottomBar(
                         Icon(
                             Icons.Default.FirstPage,
                             "First page",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = if (currentPage > 0)
+                                MaterialTheme.colorScheme.onSurface
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     }
                     IconButton(
@@ -558,7 +567,11 @@ private fun ReaderBottomBar(
                         Icon(
                             Icons.Default.ChevronLeft,
                             "Previous",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = if (currentPage > 0)
+                                MaterialTheme.colorScheme.onSurface
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     }
 
@@ -567,6 +580,7 @@ private fun ReaderBottomBar(
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontWeight = FontWeight.Medium
                         ),
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
@@ -582,7 +596,11 @@ private fun ReaderBottomBar(
                         Icon(
                             Icons.Default.ChevronRight,
                             "Next",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = if (currentPage < pageCount - 1)
+                                MaterialTheme.colorScheme.onSurface
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     }
                     IconButton(
@@ -593,7 +611,11 @@ private fun ReaderBottomBar(
                         Icon(
                             Icons.Default.LastPage,
                             "Last page",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = if (currentPage < pageCount - 1)
+                                MaterialTheme.colorScheme.onSurface
+                            else
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                         )
                     }
                 }
@@ -607,7 +629,7 @@ private fun ReaderBottomBar(
                         Icons.Default.BookmarkAdd,
                         "Add bookmark",
                         modifier = Modifier.size(20.dp),
-                        tint = PrimaryBlue
+                        tint = MaterialTheme.colorScheme.primary
                     )
                 }
 
@@ -622,12 +644,14 @@ private fun ReaderBottomBar(
                         Icon(
                             Icons.Default.ZoomOut,
                             "Zoom out",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                     Text(
                         text = "${(zoomLevel * 100).toInt()}%",
                         style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier
                             .clip(RoundedCornerShape(4.dp))
                             .clickable(onClick = onZoomReset)
@@ -642,7 +666,8 @@ private fun ReaderBottomBar(
                         Icon(
                             Icons.Default.ZoomIn,
                             "Zoom in",
-                            modifier = Modifier.size(20.dp)
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
                 }
@@ -884,22 +909,55 @@ private fun ReaderTheme(
 ) {
     val colorScheme = when (mode) {
         ReaderMode.LIGHT -> lightColorScheme(
+            primary = PrimaryBlue,
+            onPrimary = Color.White,
+            primaryContainer = PrimaryBlueContainer,
+
             background = Color.White,
             surface = Color.White,
             onBackground = Color.Black,
-            onSurface = Color.Black
+            onSurface = Color.Black,
+            onSurfaceVariant = Color.DarkGray,
+
+            surfaceVariant = Color(0xFFF5F5F5),
+            outline = Color.LightGray,
+
+            secondary = Color.DarkGray,
+            onSecondary = Color.White
         )
         ReaderMode.SEPIA -> lightColorScheme(
+            primary = Color(0xFF8B6F47),
+            onPrimary = Color.White,
+            primaryContainer = Color(0xFFE8D4B8),
+
             background = ReaderSepia,
             surface = ReaderSepia,
             onBackground = ReaderSepiaText,
-            onSurface = ReaderSepiaText
+            onSurface = ReaderSepiaText,
+            onSurfaceVariant = Color(0xFF6B5436),
+
+            surfaceVariant = Color(0xFFE8D4B8),
+            outline = Color(0xFFD4C4A8),
+
+            secondary = ReaderSepiaText,
+            onSecondary = ReaderSepia
         )
         ReaderMode.NIGHT -> darkColorScheme(
+            primary = Color(0xFF6EA8FE),
+            onPrimary = Color.Black,
+            primaryContainer = Color(0xFF0B5ED7),
+
             background = ReaderNight,
             surface = ReaderNight,
             onBackground = ReaderNightText,
-            onSurface = ReaderNightText
+            onSurface = ReaderNightText,
+            onSurfaceVariant = Color(0xFFB0B0B0),
+
+            surfaceVariant = Color(0xFF2D2D2D),
+            outline = Color(0xFF404040),
+
+            secondary = Color.White,
+            onSecondary = Color.Black
         )
     }
 

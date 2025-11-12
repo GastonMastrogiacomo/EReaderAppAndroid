@@ -92,6 +92,11 @@ interface ApiService {
         @Path("bookId") bookId: Int
     ): Response<ApiResponse<Unit>>
 
+    @DELETE("api/libraries/{id}")
+    suspend fun deleteLibrary(
+        @Path("id") id: Int
+    ): Response<ApiResponse<Unit>>
+
     // Bookmarks endpoints
     @GET("api/reading/bookmarks/{bookId}")
     suspend fun getBookmarks(

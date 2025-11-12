@@ -1,5 +1,6 @@
 package com.ereaderapp.android.ui.libraries
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -26,6 +27,9 @@ import com.ereaderapp.android.ui.components.EmptyState
 import com.ereaderapp.android.ui.components.ErrorMessage
 import com.ereaderapp.android.ui.components.LoadingIndicator
 import com.ereaderapp.android.ui.components.SuccessSnackbar
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.ui.draw.clip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +49,6 @@ fun LibraryDetailsScreen(
     var showSuccessMessage by remember { mutableStateOf<String?>(null) }
 
     // KEY FIX: Always refresh library details when screen is opened
-    // This ensures we always show the latest book list and count
     LaunchedEffect(library.id) {
         viewModel.getLibraryDetails(library.id)
     }
@@ -131,6 +134,7 @@ fun LibraryDetailsScreen(
                             )
                         } else {
                             if (isGridView) {
+                                // GRID VIEW with delete button
                                 LazyVerticalGrid(
                                     columns = GridCells.Fixed(2),
                                     contentPadding = PaddingValues(16.dp),
@@ -138,66 +142,25 @@ fun LibraryDetailsScreen(
                                     verticalArrangement = Arrangement.spacedBy(12.dp)
                                 ) {
                                     items(books, key = { it.id }) { book ->
-                                        Box {
-                                            BookCard(
-                                                book = book,
-                                                onClick = { onBookClick(book) }
-                                            )
-                                            /* Remove button overlay
-                                            IconButton(
-                                                onClick = { bookToRemove = book },
-                                                modifier = Modifier
-                                                    .align(Alignment.TopEnd)
-                                                    .padding(4.dp)
-                                            ) {
-                                                Surface(
-                                                    shape = MaterialTheme.shapes.small,
-                                                    color = MaterialTheme.colorScheme.errorContainer
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Delete,
-                                                        contentDescription = "Remove from library",
-                                                        modifier = Modifier
-                                                            .padding(4.dp)
-                                                            .size(20.dp),
-                                                        tint = MaterialTheme.colorScheme.error
-                                                    )
-                                                }
-                                            }
-                                            */
-                                        }
+                                        BookCardWithDelete(
+                                            book = book,
+                                            onBookClick = { onBookClick(book) },
+                                            onDeleteClick = { bookToRemove = book }
+                                        )
                                     }
                                 }
                             } else {
+                                // LIST VIEW with delete button
                                 LazyColumn(
                                     contentPadding = PaddingValues(16.dp),
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     items(books, key = { it.id }) { book ->
-                                        Card(
-                                            modifier = Modifier.fillMaxWidth()
-                                        ) {
-                                            Row(
-                                                modifier = Modifier.fillMaxWidth(),
-                                                verticalAlignment = Alignment.CenterVertically
-                                            ) {
-                                                Box(modifier = Modifier.weight(1f)) {
-                                                    BookListItem(
-                                                        book = book,
-                                                        onClick = { onBookClick(book) }
-                                                    )
-                                                }
-                                                IconButton(
-                                                    onClick = { bookToRemove = book }
-                                                ) {
-                                                    Icon(
-                                                        imageVector = Icons.Default.Delete,
-                                                        contentDescription = "Remove from library",
-                                                        tint = MaterialTheme.colorScheme.error
-                                                    )
-                                                }
-                                            }
-                                        }
+                                        BookListItemWithDelete(
+                                            book = book,
+                                            onBookClick = { onBookClick(book) },
+                                            onDeleteClick = { bookToRemove = book }
+                                        )
                                     }
                                 }
                             }
@@ -227,18 +190,36 @@ fun LibraryDetailsScreen(
     bookToRemove?.let { book ->
         AlertDialog(
             onDismissRequest = { bookToRemove = null },
-            title = { Text("Remove Book") },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    "Remove Book",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            },
             text = {
-                Text("Are you sure you want to remove \"${book.title}\" from this library?")
+                Text(
+                    "Are you sure you want to remove \"${book.title}\" from this library?",
+                    style = MaterialTheme.typography.bodyLarge
+                )
             },
             confirmButton = {
-                TextButton(
+                Button(
                     onClick = {
                         viewModel.removeBookFromLibrary(library.id, book.id)
                         bookToRemove = null
                     },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
                     )
                 ) {
                     Text("Remove")
@@ -248,7 +229,84 @@ fun LibraryDetailsScreen(
                 TextButton(onClick = { bookToRemove = null }) {
                     Text("Cancel")
                 }
-            }
+            },
+            shape = MaterialTheme.shapes.large
         )
+    }
+}
+
+@Composable
+private fun BookCardWithDelete(
+    book: Book,
+    onBookClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Box {
+        BookCard(
+            book = book,
+            onClick = onBookClick
+        )
+
+        // Delete button overlay in top-left corner
+        Surface(
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(8.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.errorContainer,
+            shadowElevation = 4.dp
+        ) {
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.size(32.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove from library",
+                    modifier = Modifier.size(18.dp),
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun BookListItemWithDelete(
+    book: Book,
+    onBookClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable(onClick = onBookClick)
+            ) {
+                BookListItem(
+                    book = book,
+                    onClick = onBookClick
+                )
+            }
+
+            // Delete button on the right
+            IconButton(
+                onClick = onDeleteClick,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Remove from library",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
+        }
     }
 }

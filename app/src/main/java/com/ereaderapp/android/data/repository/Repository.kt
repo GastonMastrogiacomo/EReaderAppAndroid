@@ -383,4 +383,20 @@ class Repository @Inject constructor(
             }
         }
     }
+
+    suspend fun deleteLibrary(libraryId: Int): Result<Unit> {
+        return handleApiResponse(
+            call = { apiService.deleteLibrary(libraryId) },
+            errorMessage = "Failed to delete library"
+        ).mapCatching { response ->
+            when {
+                response.success -> Unit
+                else -> throw Exception(response.message ?: "Failed to delete library")
+            }
+        }
+    }
+
+
+
+
 }
