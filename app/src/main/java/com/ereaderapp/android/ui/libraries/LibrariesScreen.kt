@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.LibraryBooks
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,9 +19,6 @@ import com.ereaderapp.android.ui.components.EmptyState
 import com.ereaderapp.android.ui.components.ErrorMessage
 import com.ereaderapp.android.ui.components.LoadingIndicator
 import com.ereaderapp.android.ui.components.SuccessSnackbar
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.ui.draw.clip
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -37,13 +35,10 @@ fun LibrariesScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf<String?>(null) }
 
-    // KEY FIX: Always refresh when this screen is opened/resumed
-    // This ensures data is always in sync with the backend
     LaunchedEffect(Unit) {
         viewModel.loadLibraries(forceRefresh = true)
     }
 
-    // Auto-refresh when marked for refresh
     LaunchedEffect(shouldRefresh) {
         if (shouldRefresh) {
             viewModel.loadLibraries(forceRefresh = true)
@@ -54,7 +49,6 @@ fun LibrariesScreen(
     LaunchedEffect(actionSuccess) {
         actionSuccess?.let {
             showSuccessMessage = it
-            // Auto-dismiss after showing
             kotlinx.coroutines.delay(100)
             viewModel.clearActionSuccess()
         }
@@ -149,7 +143,8 @@ fun LibrariesScreen(
                             items(libraries, key = { it.id }) { library ->
                                 LibraryCard(
                                     library = library,
-                                    onClick = { onLibraryClick(library) }
+                                    onClick = { onLibraryClick(library) },
+                                    onDelete = { viewModel.deleteLibrary(library.id) }
                                 )
                             }
                         }
@@ -189,8 +184,11 @@ fun LibrariesScreen(
 @Composable
 private fun LibraryCard(
     library: Library,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    onDelete: () -> Unit
 ) {
+    var showDeleteDialog by remember { mutableStateOf(false) }
+
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth(),
@@ -240,7 +238,66 @@ private fun LibraryCard(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
             }
+
+            // Delete button
+            IconButton(
+                onClick = { showDeleteDialog = true }
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Delete library",
+                    tint = MaterialTheme.colorScheme.error
+                )
+            }
         }
+    }
+
+    // Delete confirmation dialog
+    if (showDeleteDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(32.dp)
+                )
+            },
+            title = {
+                Text(
+                    "Delete Library",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    )
+                )
+            },
+            text = {
+                Text(
+                    "Are you sure you want to delete \"${library.name}\"? This will remove the library but not the books themselves.",
+                    style = MaterialTheme.typography.bodyLarge
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onDelete()
+                        showDeleteDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Text("Delete")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteDialog = false }) {
+                    Text("Cancel")
+                }
+            },
+            shape = MaterialTheme.shapes.large
+        )
     }
 }
 
