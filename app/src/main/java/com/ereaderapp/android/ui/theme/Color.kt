@@ -2,25 +2,20 @@ package com.ereaderapp.android.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Primary Colors - Based on web version (#0d6efd)
-val PrimaryBlue = Color(0xFF0D6EFD)
-val PrimaryBlueDark = Color(0xFF0B5ED7)
-val PrimaryBlueLight = Color(0xFF6EA8FE)
-val PrimaryBlueContainer = Color(0xFFE7F1FF)
+val PrimaryBrown = Color(0xFF7A4E2B)  // --primary-color
+val PrimaryBrownHover = Color(0xFF633F23)  // --primary-hover
+val AccentBrown = Color(0xFFC89B6D)  // --accent-color
+val BackgroundMain = Color(0xFFF5F2EE)  // --background-main
+val BackgroundSection = Color(0xFFFFFFFF)  // --background-section
+val TextPrimary = Color(0xFF2D2D2D)  // --text-primary
+val TextSecondary = Color(0xFF555555)  // --text-secondary
+val BorderLight = Color(0xFFE8E4DF)  // --border-light
 
-// Secondary Colors
-val SecondaryGray = Color(0xFF6C757D)
-val SecondaryGrayLight = Color(0xFFADB5BD)
-val SecondaryGrayDark = Color(0xFF495057)
-
-// Background Colors
-val BackgroundLight = Color(0xFFF8F9FA)
-val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceVariant = Color(0xFFF1F3F5)
-val SurfaceBorder = Color(0xFFDEE2E6)
+// Container Colors
+val PrimaryBrownContainer = Color(0xFFE8D4B8)
 
 // Dark Theme Colors
-val PrimaryBlueDarkTheme = Color(0xFF6EA8FE)
+val PrimaryBrownDarkTheme = Color(0xFFC89B6D)
 val BackgroundDark = Color(0xFF121212)
 val SurfaceDark = Color(0xFF1E1E1E)
 val SurfaceVariantDark = Color(0xFF2D2D2D)
@@ -31,10 +26,7 @@ val AccentYellow = Color(0xFFFFC107)
 val AccentRed = Color(0xFFDC3545)
 val AccentOrange = Color(0xFFFD7E14)
 
-// Text Colors
-val TextPrimary = Color(0xFF212529)
-val TextSecondary = Color(0xFF6C757D)
-val TextTertiary = Color(0xFFADB5BD)
+// Text Colors for Dark Theme
 val TextOnPrimary = Color(0xFFFFFFFF)
 
 // Overlay & Shadow Colors
@@ -48,18 +40,27 @@ val ReaderSepiaText = Color(0xFF5B4636)
 val ReaderNight = Color(0xFF1A1A1A)
 val ReaderNightText = Color(0xFFE0E0E0)
 
-// Rating Star Color (matching web's #FFD700)
+// Rating Star Color
 val StarGold = Color(0xFFFFD700)
 
 // Legacy compatibility
-val Purple80 = PrimaryBlueLight
-val PurpleGrey80 = SecondaryGrayLight
+val Purple80 = PrimaryBrownContainer
+val PurpleGrey80 = TextSecondary
 val Pink80 = Color(0xFFEFB8C8)
 
-val Purple40 = PrimaryBlue
-val PurpleGrey40 = SecondaryGray
+val Purple40 = PrimaryBrown
+val PurpleGrey40 = TextSecondary
 val Pink40 = Color(0xFF7D5260)
 
-
-
-
+val PrimaryBlue = PrimaryBrown
+val PrimaryBlueDark = PrimaryBrownHover
+val PrimaryBlueLight = AccentBrown
+val PrimaryBlueContainer = PrimaryBrownContainer
+val SecondaryGray = TextSecondary
+val SecondaryGrayLight = Color(0xFFADB5BD)
+val SecondaryGrayDark = Color(0xFF495057)
+val BackgroundLight = BackgroundMain
+val SurfaceLight = BackgroundSection
+val SurfaceVariant = BorderLight
+val SurfaceBorder = BorderLight
+val PrimaryBlueDarkTheme = PrimaryBrownDarkTheme

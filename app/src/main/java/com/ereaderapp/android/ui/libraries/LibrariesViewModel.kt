@@ -69,7 +69,24 @@ class LibrariesViewModel @Inject constructor(
 
     fun createLibrary(name: String) {
         executeWithLoading {
-            val result = repository.createLibrary(name)
+            // Validate library name is not empty
+            if (name.isBlank()) {
+                setError("Library name cannot be empty")
+                return@executeWithLoading
+            }
+
+            // Check for duplicate library names (case-insensitive)
+            val trimmedName = name.trim()
+            val duplicateExists = _libraries.value.any {
+                it.name.trim().equals(trimmedName, ignoreCase = true)
+            }
+
+            if (duplicateExists) {
+                setError("You already have a library named '$trimmedName'. Please choose a different name.")
+                return@executeWithLoading
+            }
+
+            val result = repository.createLibrary(trimmedName)
             result.fold(
                 onSuccess = { library ->
                     _libraries.value = _libraries.value + library
@@ -170,5 +187,4 @@ class LibrariesViewModel @Inject constructor(
             }
         }
     }
-
 }

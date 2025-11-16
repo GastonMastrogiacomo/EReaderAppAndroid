@@ -97,7 +97,8 @@ class BooksViewModel @Inject constructor(
     fun searchBooks(query: String) {
         _searchQuery.value = query
         _currentPage.value = 1
-        loadBooks(search = query.takeIf { it.isNotEmpty() })
+
+        loadBooks(search = query.trim().takeIf { it.isNotEmpty() })
     }
 
     fun filterByCategory(categoryId: Int?) {

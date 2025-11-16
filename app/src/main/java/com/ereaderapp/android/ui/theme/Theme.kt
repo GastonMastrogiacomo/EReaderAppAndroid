@@ -17,25 +17,25 @@ import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
 private val LightColorScheme = lightColorScheme(
-    primary = PrimaryBlue,
+    primary = PrimaryBrown,
     onPrimary = TextOnPrimary,
-    primaryContainer = PrimaryBlueContainer,
-    onPrimaryContainer = PrimaryBlueDark,
+    primaryContainer = PrimaryBrownContainer,
+    onPrimaryContainer = PrimaryBrownHover,
 
-    secondary = SecondaryGray,
+    secondary = TextSecondary,
     onSecondary = TextOnPrimary,
-    secondaryContainer = SurfaceVariant,
-    onSecondaryContainer = SecondaryGrayDark,
+    secondaryContainer = BorderLight,
+    onSecondaryContainer = TextPrimary,
 
     tertiary = AccentYellow,
     onTertiary = TextPrimary,
 
-    background = BackgroundLight,
+    background = BackgroundMain,
     onBackground = TextPrimary,
 
-    surface = SurfaceLight,
+    surface = BackgroundSection,
     onSurface = TextPrimary,
-    surfaceVariant = SurfaceVariant,
+    surfaceVariant = BorderLight,
     onSurfaceVariant = TextSecondary,
 
     error = AccentRed,
@@ -43,28 +43,28 @@ private val LightColorScheme = lightColorScheme(
     errorContainer = Color(0xFFFFF3F3),
     onErrorContainer = AccentRed,
 
-    outline = SurfaceBorder,
-    outlineVariant = SecondaryGrayLight,
+    outline = BorderLight,
+    outlineVariant = Color(0xFFADB5BD),
 
     scrim = OverlayMedium,
 
     inverseSurface = SurfaceDark,
     inverseOnSurface = Color.White,
-    inversePrimary = PrimaryBlueLight,
+    inversePrimary = AccentBrown,
 
-    surfaceTint = PrimaryBlue
+    surfaceTint = PrimaryBrown
 )
 
 private val DarkColorScheme = darkColorScheme(
-    primary = PrimaryBlueDarkTheme,
+    primary = PrimaryBrownDarkTheme,
     onPrimary = TextPrimary,
-    primaryContainer = PrimaryBlueDark,
-    onPrimaryContainer = PrimaryBlueLight,
+    primaryContainer = PrimaryBrownHover,
+    onPrimaryContainer = AccentBrown,
 
-    secondary = SecondaryGrayLight,
+    secondary = Color(0xFFADB5BD),
     onSecondary = Color.White,
-    secondaryContainer = SecondaryGray,
-    onSecondaryContainer = SecondaryGrayLight,
+    secondaryContainer = Color(0xFF6C757D),
+    onSecondaryContainer = Color(0xFFADB5BD),
 
     tertiary = AccentYellow,
     onTertiary = TextPrimary,
@@ -75,29 +75,29 @@ private val DarkColorScheme = darkColorScheme(
     surface = SurfaceDark,
     onSurface = Color.White,
     surfaceVariant = SurfaceVariantDark,
-    onSurfaceVariant = SecondaryGrayLight,
+    onSurfaceVariant = Color(0xFFADB5BD),
 
     error = AccentRed,
     onError = Color.White,
     errorContainer = Color(0xFF5F1A1A),
     onErrorContainer = Color(0xFFFFBFBF),
 
-    outline = SecondaryGrayDark,
-    outlineVariant = SecondaryGray,
+    outline = Color(0xFF495057),
+    outlineVariant = Color(0xFF6C757D),
 
     scrim = OverlayDark,
 
-    inverseSurface = SurfaceLight,
+    inverseSurface = BackgroundSection,
     inverseOnSurface = TextPrimary,
-    inversePrimary = PrimaryBlue,
+    inversePrimary = PrimaryBrown,
 
-    surfaceTint = PrimaryBlueDarkTheme
+    surfaceTint = PrimaryBrownDarkTheme
 )
 
 @Composable
 fun EReaderAppTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Cambiado a false para usar nuestros colores personalizados
+    dynamicColor: Boolean = false, // Changed to false to use custom brown colors
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -128,7 +128,3 @@ fun EReaderAppTheme(
         content = content
     )
 }
-
-
-
-
